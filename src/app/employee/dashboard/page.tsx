@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -12,7 +11,6 @@ import { Employee, Job } from '@/types';
 import { handleApiError } from '@/lib/api';
 
 export default function EmployeeDashboard() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Employee | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
   const [shortlistedJobs, setShortlistedJobs] = useState<Job[]>([]);

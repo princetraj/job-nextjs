@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read(//c/wamp64/www/jobprotal/job-portal-api/**)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

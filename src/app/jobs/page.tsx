@@ -27,6 +27,7 @@ export default function JobsPage() {
   useEffect(() => {
     fetchFilters();
     fetchJobs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   const fetchFilters = async () => {
@@ -37,8 +38,8 @@ export default function JobsPage() {
       ]);
       setLocations(locData.locations);
       setCategories(catData.categories);
-    } catch (error) {
-      console.error('Error fetching filters:', error);
+    } catch (err) {
+      console.error('Error fetching filters:', err);
     }
   };
 
@@ -49,8 +50,8 @@ export default function JobsPage() {
       const response = await service.searchJobs({ ...filters, page: currentPage });
       setJobs(response.jobs.data);
       setTotalPages(response.jobs.last_page);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ export default function JobsPage() {
     try {
       await employeeService.shortlistJob(jobId);
       alert('Job added to shortlist!');
-    } catch (error) {
+    } catch {
       alert('Failed to shortlist job');
     }
   };

@@ -34,7 +34,7 @@ export default function LoginPage() {
       } else {
         router.push('/');
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(handleApiError(err));
       setLoading(false);
     }

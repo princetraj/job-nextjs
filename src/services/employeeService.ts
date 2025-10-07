@@ -4,12 +4,14 @@ import { Employee, Job, PaginatedResponse, CVRequest } from '@/types';
 
 export const employeeService = {
   // Get Profile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getProfile(): Promise<{ user: Employee; plan: any }> {
     const response = await api.get('/employee/profile');
     return response.data;
   },
 
   // Update Profile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateProfile(field: string, value: any): Promise<void> {
     await api.put('/employee/profile/update', { field, value });
   },
@@ -53,6 +55,7 @@ export const employeeService = {
   },
 
   // Generate CV
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async generateCV(): Promise<any> {
     const response = await api.get('/employee/cv/generate');
     return response.data;
@@ -72,6 +75,7 @@ export const employeeService = {
   async requestProfessionalCV(data: {
     notes?: string;
     preferred_template?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }): Promise<any> {
     const response = await api.post('/employee/cv/request-professional', data);
     return response.data;

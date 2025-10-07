@@ -13,6 +13,7 @@ export default function EmployerRegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [industries, setIndustries] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({

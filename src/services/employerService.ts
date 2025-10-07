@@ -4,6 +4,7 @@ import { Employer, Job, Application } from '@/types';
 
 export const employerService = {
   // Get Profile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getProfile(): Promise<{ user: Employer; plan: any }> {
     const response = await api.get('/employer/profile');
     return response.data;

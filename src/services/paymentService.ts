@@ -8,6 +8,7 @@ export const paymentService = {
     plan_id: string;
     coupon_code?: string;
     payment_method: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payment_details: any;
   }): Promise<{
     message: string;
@@ -22,6 +23,7 @@ export const paymentService = {
   async verifyPayment(data: {
     payment_id: string;
     transaction_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }): Promise<any> {
     const response = await api.post('/payments/verify', data);
     return response.data;

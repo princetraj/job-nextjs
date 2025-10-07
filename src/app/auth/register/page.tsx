@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const searchParams = useSearchParams();
   const [userType, setUserType] = useState<'employee' | 'employer'>('employee');
 
@@ -79,5 +79,13 @@ export default function RegisterPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }

@@ -8,7 +8,7 @@ interface JobCardProps {
   onShortlist?: (jobId: string) => void;
 }
 
-export default function JobCard({ job, showApplyButton = true, onApply, onShortlist }: JobCardProps) {
+export default function JobCard({ job, showApplyButton = true, onShortlist }: JobCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200">
       <div className="flex justify-between items-start mb-4">

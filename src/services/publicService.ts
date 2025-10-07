@@ -39,6 +39,7 @@ export const publicService = {
     location_id?: string;
     category_id?: string;
     page?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }): Promise<any> {
     const response = await api.get('/jobs/search', { params });
     return response.data;

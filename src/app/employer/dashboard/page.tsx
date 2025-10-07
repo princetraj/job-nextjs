@@ -1,17 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { employerService } from '@/services/employerService';
-import { Employer, Job, Application } from '@/types';
+import { Employer, Job } from '@/types';
 import { handleApiError } from '@/lib/api';
 
 export default function EmployerDashboard() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Employer | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);

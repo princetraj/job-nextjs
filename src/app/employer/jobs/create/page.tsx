@@ -15,7 +15,9 @@ export default function CreateJobPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [locations, setLocations] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [categories, setCategories] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
@@ -61,7 +63,7 @@ export default function CreateJobPage() {
 
     setLoading(true);
     try {
-      const response = await employerService.createJob({
+      await employerService.createJob({
         title: formData.title,
         description: formData.description,
         salary: formData.salary || undefined,

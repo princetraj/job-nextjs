@@ -20,7 +20,7 @@ export default function Navbar() {
       await authService.logout();
       setUserType(null);
       router.push('/');
-    } catch (error) {
+    } catch {
       clearAuth();
       setUserType(null);
       router.push('/');

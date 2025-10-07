@@ -74,6 +74,7 @@ export const clearAuth = () => {
 };
 
 // Error handler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handleApiError = (error: any) => {
   if (error.response) {
     // Server responded with error

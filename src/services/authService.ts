@@ -6,7 +6,7 @@ export const authService = {
   // Login
   async login(identifier: string, password: string): Promise<LoginResponse> {
     const response = await api.post('/auth/login', { identifier, password });
-    const { token, user_type, user } = response.data;
+    const { token, user_type } = response.data;
     setAuthToken(token, user_type);
     return response.data;
   },
@@ -56,7 +56,9 @@ export const authService = {
   async registerEmployeeFinal(
     tempToken: string,
     data: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       education: any[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       experience: any[];
       skills: string[];
     }
@@ -75,6 +77,7 @@ export const authService = {
     email: string;
     contact: string;
     password: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     address: any;
     industry_type_id: string;
   }): Promise<{ token: string }> {
