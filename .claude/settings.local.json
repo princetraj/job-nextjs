@@ -3,7 +3,8 @@
     "allow": [
       "Read(//c/wamp64/www/jobprotal/job-portal-api/**)",
       "Bash(mkdir:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []
