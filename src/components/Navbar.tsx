@@ -73,6 +73,12 @@ export default function Navbar() {
                   Dashboard
                 </Link>
                 <Link
+                  href="/employee/upgrade-plan"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Upgrade Plan
+                </Link>
+                <Link
                   href="/employee/profile"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                 >

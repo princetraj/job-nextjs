@@ -22,7 +22,16 @@ export default function JobsPage() {
     location_id: '',
     category_id: '',
   });
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const userType = getUserType();
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
 
   useEffect(() => {
     fetchFilters();
@@ -62,16 +71,41 @@ export default function JobsPage() {
     fetchJobs();
   };
 
+  const handleApply = async (jobId: string) => {
+    if (userType !== 'employee') {
+      showNotification('error', 'Please login as a job seeker to apply for jobs');
+      return;
+    }
+    try {
+      await employeeService.applyForJob(jobId);
+      showNotification('success', 'Application submitted successfully!');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to apply for job';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to apply for job');
+      }
+    }
+  };
+
   const handleShortlist = async (jobId: string) => {
     if (userType !== 'employee') {
-      alert('Please login as a job seeker to shortlist jobs');
+      showNotification('error', 'Please login as a job seeker to shortlist jobs');
       return;
     }
     try {
       await employeeService.shortlistJob(jobId);
-      alert('Job added to shortlist!');
-    } catch {
-      alert('Failed to shortlist job');
+      showNotification('success', 'Job added to shortlist!');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to shortlist job';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to shortlist job');
+      }
     }
   };
 
@@ -81,6 +115,52 @@ export default function JobsPage() {
       <main className="flex-1 bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Browse Jobs</h1>
+
+          {/* Notification */}
+          {notification && (
+            <div
+              className={`mb-6 p-4 rounded-lg ${
+                notification.type === 'success'
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}
+            >
+              <div className="flex items-center">
+                {notification.type === 'success' ? (
+                  <svg
+                    className="w-5 h-5 text-green-600 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5 text-red-600 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+                <p
+                  className={`text-sm font-medium ${
+                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                  }`}
+                >
+                  {notification.message}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Search Filters */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -138,7 +218,12 @@ export default function JobsPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} onShortlist={handleShortlist} />
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    onApply={userType === 'employee' ? handleApply : undefined}
+                    onShortlist={userType === 'employee' ? handleShortlist : undefined}
+                  />
                 ))}
               </div>
 

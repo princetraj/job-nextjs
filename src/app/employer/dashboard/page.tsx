@@ -21,12 +21,13 @@ export default function EmployerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const profileData = await employerService.getProfile();
-      setProfile(profileData.user);
+      const [profileData, jobsData] = await Promise.all([
+        employerService.getProfile(),
+        employerService.getAllJobs(),
+      ]);
 
-      // Note: API doesn't have a "get all my jobs" endpoint, so jobs will be empty
-      // Individual jobs can be fetched using getJob(jobId) if job IDs are known
-      setJobs([]);
+      setProfile(profileData.user);
+      setJobs(jobsData.jobs);
     } catch (err) {
       setError(handleApiError(err));
     } finally {
@@ -39,7 +40,9 @@ export default function EmployerDashboard() {
 
     try {
       await employerService.deleteJob(jobId);
-      setJobs(jobs.filter((job) => job.id !== jobId));
+      // Refresh the jobs list
+      const jobsData = await employerService.getAllJobs();
+      setJobs(jobsData.jobs);
     } catch (err) {
       alert(handleApiError(err));
     }

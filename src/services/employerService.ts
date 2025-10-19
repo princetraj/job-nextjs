@@ -15,6 +15,12 @@ export const employerService = {
     await api.put('/employer/profile/update', data);
   },
 
+  // Get All Jobs
+  async getAllJobs(): Promise<{ jobs: Job[] }> {
+    const response = await api.get('/employer/jobs');
+    return response.data;
+  },
+
   // Create Job
   async createJob(data: {
     title: string;
@@ -28,7 +34,7 @@ export const employerService = {
   },
 
   // Get Job Details
-  async getJob(jobId: string): Promise<Job> {
+  async getJob(jobId: string): Promise<{ job: Job }> {
     const response = await api.get(`/employer/jobs/${jobId}`);
     return response.data;
   },
@@ -52,8 +58,26 @@ export const employerService = {
   // Update Application Status
   async updateApplicationStatus(
     appId: string,
-    status: 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected'
+    status: 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected',
+    interviewDetails?: {
+      interview_date?: string;
+      interview_time?: string;
+      interview_location?: string;
+    }
   ): Promise<void> {
-    await api.put(`/employer/applications/${appId}/status`, { status });
+    await api.put(`/employer/applications/${appId}/status`, {
+      status,
+      ...interviewDetails,
+    });
+  },
+
+  // Download Employee CV
+  async downloadEmployeeCV(employeeId: string): Promise<Blob> {
+    console.log('API Call - Download CV for employee ID:', employeeId);
+    console.log('Full URL will be:', `/employer/employees/${employeeId}/cv/download`);
+    const response = await api.get(`/employer/employees/${employeeId}/cv/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };

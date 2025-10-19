@@ -43,6 +43,9 @@ export interface Employee extends User {
   cv_url?: string;
   plan_id?: string;
   created_at?: string;
+  profile_photo_url?: string;
+  profile_photo_status?: 'pending' | 'approved' | 'rejected';
+  profile_photo_rejection_reason?: string;
 }
 
 export interface Employer extends User {
@@ -71,6 +74,12 @@ export interface Job {
   created_at?: string;
   applied_at?: string;
   status?: string;
+  is_applied?: boolean;
+  is_shortlisted?: boolean;
+  shortlist_id?: string;
+  interview_date?: string;
+  interview_time?: string;
+  interview_location?: string;
 }
 
 export interface Application {
@@ -79,6 +88,9 @@ export interface Application {
   job?: Job;
   applied_at: string;
   status: 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected';
+  interview_date?: string;
+  interview_time?: string;
+  interview_location?: string;
 }
 
 export interface Plan {
@@ -139,6 +151,17 @@ export interface CVRequest {
   status: 'pending' | 'in_progress' | 'completed' | 'rejected';
   completed_cv_url?: string;
   created_at: string;
+}
+
+export interface CV {
+  id: string;
+  employee_id: string;
+  title: string;
+  type: 'uploaded' | 'created';
+  file_url?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LoginResponse {

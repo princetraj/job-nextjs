@@ -87,3 +87,23 @@ export const handleApiError = (error: any) => {
     return error.message || 'An unexpected error occurred';
   }
 };
+
+// Plan Management APIs
+export const planAPI = {
+  // Get current plan for authenticated employee
+  getCurrentPlan: () => api.get('/employee/plan/current'),
+
+  // Get available plans for upgrade (excludes default plans)
+  getAvailablePlans: () => api.get('/employee/plan/available'),
+
+  // Upgrade to a new plan
+  upgradePlan: (planId: string, paymentId?: string) =>
+    api.post('/employee/plan/upgrade', { plan_id: planId, payment_id: paymentId }),
+
+  // Get plan subscription history
+  getPlanHistory: () => api.get('/employee/plan/history'),
+
+  // Get all plans (public)
+  getAllPlans: (type?: string) =>
+    api.get('/plans/', { params: type ? { type } : {} }),
+};

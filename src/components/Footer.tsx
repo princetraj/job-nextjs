@@ -62,6 +62,11 @@ export default function Footer() {
             <h4 className="text-md font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
+                <Link href="/about" className="text-gray-400 hover:text-white">
+                  About Us
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white">
                   Contact Us
                 </Link>
@@ -69,6 +74,11 @@ export default function Footer() {
               <li>
                 <Link href="/faq" className="text-gray-400 hover:text-white">
                   FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-400 hover:text-white">
+                  Terms & Conditions
                 </Link>
               </li>
               <li>

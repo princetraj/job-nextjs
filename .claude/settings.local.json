@@ -4,7 +4,12 @@
       "Read(//c/wamp64/www/jobprotal/job-portal-api/**)",
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(npm install react-hook-form zod @hookform/resolvers)",
+      "Bash(grep -B 3 \"insert into \\`jobs\\`\" \"C:\\wamp64\\www\\jobprotal\\job-portal-api\\storage\\logs\\laravel.log\")",
+      "mcp__ide__getDiagnostics",
+      "Bash(composer require barryvdh/laravel-dompdf)",
+      "Read(//c/wamp64/www/jobprotal/**)"
     ],
     "deny": [],
     "ask": []

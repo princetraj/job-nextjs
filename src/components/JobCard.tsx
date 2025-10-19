@@ -1,14 +1,50 @@
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { Job } from '@/types';
 
 interface JobCardProps {
   job: Job;
   showApplyButton?: boolean;
-  onApply?: (jobId: string) => void;
-  onShortlist?: (jobId: string) => void;
+  onApply?: (jobId: string) => Promise<void>;
+  onShortlist?: (jobId: string) => Promise<void>;
 }
 
-export default function JobCard({ job, showApplyButton = true, onShortlist }: JobCardProps) {
+export default function JobCard({ job, showApplyButton = true, onApply, onShortlist }: JobCardProps) {
+  const [isApplying, setIsApplying] = useState(false);
+  const [isShortlisting, setIsShortlisting] = useState(false);
+  const [applied, setApplied] = useState(job.is_applied || false);
+  const [shortlisted, setShortlisted] = useState(job.is_shortlisted || false);
+
+  // Update state when job prop changes (e.g., after page reload)
+  useEffect(() => {
+    setApplied(job.is_applied || false);
+    setShortlisted(job.is_shortlisted || false);
+  }, [job.is_applied, job.is_shortlisted]);
+
+  const handleApply = async () => {
+    if (!onApply || isApplying || applied) return;
+    setIsApplying(true);
+    try {
+      await onApply(job.id);
+      setApplied(true);
+    } catch (error) {
+      console.error('Apply error:', error);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleShortlist = async () => {
+    if (!onShortlist || isShortlisting || shortlisted) return;
+    setIsShortlisting(true);
+    try {
+      await onShortlist(job.id);
+      setShortlisted(true);
+    } catch (error) {
+      console.error('Shortlist error:', error);
+    } finally {
+      setIsShortlisting(false);
+    }
+  };
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200">
       <div className="flex justify-between items-start mb-4">
@@ -82,34 +118,136 @@ export default function JobCard({ job, showApplyButton = true, onShortlist }: Jo
                 : job.status === 'rejected'
                 ? 'bg-red-100 text-red-800'
                 : job.status === 'interview_scheduled'
-                ? 'bg-blue-100 text-blue-800'
-                : job.status === 'shortlisted'
                 ? 'bg-purple-100 text-purple-800'
+                : job.status === 'shortlisted'
+                ? 'bg-yellow-100 text-yellow-800'
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
             {job.status.replace('_', ' ').toUpperCase()}
           </span>
+
+          {/* Show interview details if status is interview_scheduled */}
+          {job.status === 'interview_scheduled' && job.interview_date && (
+            <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <h4 className="text-sm font-semibold text-purple-900 mb-2 flex items-center">
+                <svg
+                  className="w-4 h-4 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Interview Details
+              </h4>
+              <div className="text-xs text-purple-900 space-y-1">
+                <p>
+                  <span className="font-medium">Date:</span>{' '}
+                  {new Date(job.interview_date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+                {job.interview_time && (
+                  <p>
+                    <span className="font-medium">Time:</span> {job.interview_time}
+                  </p>
+                )}
+                {job.interview_location && (
+                  <p>
+                    <span className="font-medium">Location:</span> {job.interview_location}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {showApplyButton && (
         <div className="flex gap-2">
-          <Link
-            href={`/jobs/${job.id}`}
-            className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            View Details
-          </Link>
+          {onApply && (
+            <button
+              onClick={handleApply}
+              disabled={isApplying || applied}
+              className={`flex-1 text-white text-center py-2 px-4 rounded-md transition-colors font-medium ${
+                applied
+                  ? 'bg-green-600 hover:bg-green-700 cursor-default'
+                  : isApplying
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {isApplying ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Applying...
+                </span>
+              ) : applied ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Applied
+                </span>
+              ) : (
+                'Apply Now'
+              )}
+            </button>
+          )}
           {onShortlist && (
             <button
-              onClick={() => onShortlist(job.id)}
-              className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              title="Add to Shortlist"
+              onClick={handleShortlist}
+              disabled={isShortlisting || shortlisted}
+              className={`p-2 border rounded-md transition-colors ${
+                shortlisted
+                  ? 'bg-yellow-50 border-yellow-500'
+                  : isShortlisting
+                  ? 'bg-gray-50 border-gray-300 cursor-not-allowed'
+                  : 'border-gray-300 hover:bg-gray-50'
+              }`}
+              title={shortlisted ? 'Shortlisted' : 'Add to Shortlist'}
             >
               <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
+                className={`w-5 h-5 ${
+                  shortlisted ? 'text-yellow-600' : 'text-gray-600'
+                }`}
+                fill={shortlisted ? 'currentColor' : 'none'}
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
