@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { planAPI, handleApiError } from '@/lib/api';
+import Script from 'next/script';
+import { planAPI, paymentAPI, handleApiError } from '@/lib/api';
+
+// Declare Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface Feature {
   id: string;
@@ -45,15 +53,68 @@ export default function UpgradePlanPage() {
   };
 
   const handleUpgrade = async (planId: string) => {
+    if (!window.Razorpay) {
+      alert('Payment gateway is loading. Please try again in a moment.');
+      return;
+    }
+
     setUpgrading(planId);
     try {
-      const response = await planAPI.upgradePlan(planId);
-      alert(response.data.message || 'Plan upgraded successfully!');
-      router.push('/employee/dashboard');
+      // Step 1: Create Razorpay order
+      const orderResponse = await paymentAPI.createRazorpayOrder(planId);
+      const { razorpay_order_id, amount, currency, razorpay_key, plan } = orderResponse.data;
+
+      // Step 2: Configure Razorpay options
+      const options = {
+        key: razorpay_key,
+        amount: amount * 100, // Razorpay expects amount in paise
+        currency: currency,
+        name: 'Job Portal',
+        description: `Upgrade to ${plan.name}`,
+        order_id: razorpay_order_id,
+        handler: async function (response: any) {
+          try {
+            // Step 3: Verify payment on backend
+            const verifyResponse = await paymentAPI.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            alert(verifyResponse.data.message || 'Payment successful! Plan upgraded.');
+            router.push('/employee/dashboard');
+          } catch (verifyErr) {
+            const errorMessage = handleApiError(verifyErr);
+            alert('Payment verification failed: ' + errorMessage);
+            setUpgrading(null);
+          }
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: '',
+        },
+        theme: {
+          color: '#2563eb', // Blue color matching the theme
+        },
+        modal: {
+          ondismiss: function() {
+            setUpgrading(null);
+          }
+        }
+      };
+
+      // Step 4: Open Razorpay payment modal
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response: any) {
+        alert('Payment failed: ' + (response.error.description || 'Unknown error'));
+        setUpgrading(null);
+      });
+      razorpay.open();
+
     } catch (err) {
       const errorMessage = handleApiError(err);
-      alert(errorMessage);
-    } finally {
+      alert('Failed to initiate payment: ' + errorMessage);
       setUpgrading(null);
     }
   };
@@ -101,8 +162,15 @@ export default function UpgradePlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      {/* Load Razorpay script */}
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
+
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -221,7 +289,8 @@ export default function UpgradePlanPage() {
             ← Back to Dashboard
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

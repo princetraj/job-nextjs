@@ -44,6 +44,8 @@ export interface Employee extends User {
   plan_id?: string;
   created_at?: string;
   profile_photo_url?: string;
+  profile_photo_full_url?: string; // Full URL with domain from ENV
+  public_profile_photo_url?: string; // Only available if approved
   profile_photo_status?: 'pending' | 'approved' | 'rejected';
   profile_photo_rejection_reason?: string;
 }
@@ -121,6 +123,11 @@ export interface Location {
 }
 
 export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface Skill {
   id: string;
   name: string;
 }

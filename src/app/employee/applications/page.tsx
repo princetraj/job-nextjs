@@ -15,6 +15,10 @@ export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -97,6 +101,39 @@ export default function ApplicationsPage() {
       selected: applications.filter((app) => app.status === 'selected').length,
       rejected: applications.filter((app) => app.status === 'rejected').length,
     };
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleViewContact = async (jobId: string) => {
+    try {
+      const response = await employeeService.viewEmployerContact(jobId);
+      const contact = response.contact;
+      const contactInfo = `
+Company: ${contact.company_name}
+Email: ${contact.email}
+Phone: ${contact.contact}
+${contact.industry ? `Industry: ${contact.industry}` : ''}
+${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).join(', ')}` : ''}
+      `.trim();
+
+      alert(contactInfo);
+
+      if (!response.already_viewed) {
+        showNotification('success', `Contact details retrieved! ${response.contact_views_remaining === -1 ? 'Unlimited views remaining' : `${response.contact_views_remaining} views remaining`}`);
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to view contact details';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to view contact details');
+      }
+    }
   };
 
   if (loading) {
@@ -379,9 +416,51 @@ export default function ApplicationsPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Actions */}
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <button
+                        onClick={() => handleViewContact(job.id)}
+                        className="w-full sm:w-auto bg-white border border-indigo-600 text-indigo-600 px-4 py-2 rounded-md hover:bg-indigo-50 transition-colors font-medium inline-flex items-center justify-center"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                        View Contact Details
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Notification */}
+          {notification && (
+            <div
+              className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                notification.type === 'success'
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}
+            >
+              <p
+                className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}
+              >
+                {notification.message}
+              </p>
             </div>
           )}
         </div>

@@ -12,6 +12,8 @@ import { handleApiError } from '@/lib/api';
 export default function EmployerDashboard() {
   const [profile, setProfile] = useState<Employer | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [planDetails, setPlanDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,13 +23,15 @@ export default function EmployerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profileData, jobsData] = await Promise.all([
+      const [profileData, jobsData, planData] = await Promise.all([
         employerService.getProfile(),
         employerService.getAllJobs(),
+        employerService.getCurrentPlan().catch(() => ({ plan: null })),
       ]);
 
       setProfile(profileData.user);
       setJobs(jobsData.jobs);
+      setPlanDetails(planData.plan);
     } catch (err) {
       setError(handleApiError(err));
     } finally {
@@ -85,6 +89,112 @@ export default function EmployerDashboard() {
             </p>
           </div>
 
+          {/* Current Plan Details */}
+          {planDetails && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-green-500">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-1">
+                    {planDetails.name}
+                  </h2>
+                  <p className="text-gray-600">{planDetails.description}</p>
+                </div>
+                <div className="text-right flex flex-col gap-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    planDetails.is_expired
+                      ? 'bg-red-100 text-red-800'
+                      : planDetails.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {planDetails.is_expired ? 'Expired' : planDetails.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                  <Link
+                    href="/employer/upgrade-plan"
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Upgrade Plan
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-600 font-medium mb-1">Price</p>
+                  <p className="text-2xl font-bold text-blue-900">₹{planDetails.price}</p>
+                </div>
+
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-sm text-purple-600 font-medium mb-1">Jobs Can Post</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {planDetails.jobs_can_post === -1 ? 'Unlimited' : planDetails.jobs_can_post}
+                  </p>
+                </div>
+
+                <div className="bg-indigo-50 rounded-lg p-4">
+                  <p className="text-sm text-indigo-600 font-medium mb-1">Contact Views Remaining</p>
+                  <p className="text-2xl font-bold text-indigo-900">
+                    {planDetails.contact_views_remaining === -1
+                      ? 'Unlimited'
+                      : planDetails.contact_views_remaining ?? 0}
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-1">
+                    Total: {planDetails.employee_contact_details_can_view === -1
+                      ? 'Unlimited'
+                      : planDetails.employee_contact_details_can_view ?? 0}
+                  </p>
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4">
+                  <p className="text-sm text-green-600 font-medium mb-1">
+                    {planDetails.expires_at ? 'Days Remaining' : 'Validity'}
+                  </p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {planDetails.days_remaining !== null && planDetails.days_remaining >= 0
+                      ? `${Math.floor(planDetails.days_remaining)} days`
+                      : planDetails.expires_at
+                      ? 'Expired'
+                      : 'Lifetime'}
+                  </p>
+                  {planDetails.expires_at && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Expires: {new Date(planDetails.expires_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {planDetails.is_default && (
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-yellow-800 flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      You are currently on the default plan. Upgrade to unlock more features!
+                    </p>
+                    <Link
+                      href="/employer/upgrade-plan"
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors ml-4"
+                    >
+                      Upgrade Now
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -115,7 +225,16 @@ export default function EmployerDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Total Applications</p>
-                  <p className="text-3xl font-bold text-gray-900">0</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {jobs.reduce((sum, job) => sum + ((job as any).applications_count || 0), 0)}
+                    </p>
+                    {jobs.reduce((sum, job) => sum + ((job as any).new_applications_count || 0), 0) > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+                        +{jobs.reduce((sum, job) => sum + ((job as any).new_applications_count || 0), 0)} New
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="bg-blue-100 rounded-full p-3">
                   <svg
@@ -392,7 +511,27 @@ export default function EmployerDashboard() {
                       <span className="text-gray-600">
                         Category: {job.category?.name || 'Not specified'}
                       </span>
-                      <span className="text-gray-600">Applications: 0</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600">
+                          Applications: {(job as any).applications_count || 0}
+                        </span>
+                        {(job as any).new_applications_count > 0 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {(job as any).new_applications_count} New
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

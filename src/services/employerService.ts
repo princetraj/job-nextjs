@@ -49,6 +49,12 @@ export const employerService = {
     await api.delete(`/employer/jobs/${jobId}`);
   },
 
+  // Get All Applications
+  async getAllApplications(): Promise<{ applications: Application[] }> {
+    const response = await api.get('/employer/applications');
+    return response.data;
+  },
+
   // Get Job Applications
   async getJobApplications(jobId: string): Promise<{ applications: Application[] }> {
     const response = await api.get(`/employer/jobs/${jobId}/applications`);
@@ -78,6 +84,42 @@ export const employerService = {
     const response = await api.get(`/employer/employees/${employeeId}/cv/download`, {
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  // View Application Contact Details (with plan limit check)
+  async viewApplicationContactDetails(appId: string): Promise<{
+    contact_details: {
+      email: string;
+      mobile: string;
+      address: any;
+    };
+    can_download_cv: boolean;
+    views_remaining: number | string;
+    already_viewed: boolean;
+  }> {
+    const response = await api.post(`/employer/applications/${appId}/view-contact`);
+    return response.data;
+  },
+
+  // Get Current Plan Details
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getCurrentPlan(): Promise<{ plan: any }> {
+    const response = await api.get('/employer/plan/current');
+    return response.data;
+  },
+
+  // Get Available Plans for Upgrade
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getAvailablePlans(): Promise<{ plans: any[] }> {
+    const response = await api.get('/employer/plan/available');
+    return response.data;
+  },
+
+  // Get Plan History
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getPlanHistory(): Promise<{ history: any[] }> {
+    const response = await api.get('/employer/plan/history');
     return response.data;
   },
 };

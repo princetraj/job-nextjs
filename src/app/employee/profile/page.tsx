@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { employeeProfileSchema, type EmployeeProfileFormData } from '@/lib/validations/employeeProfileSchema';
 import { employeeService } from '@/services/employeeService';
+import { publicService } from '@/services/publicService';
 import { handleApiError } from '@/lib/api';
-import { Employee } from '@/types';
+import { Employee, Skill } from '@/types';
 import { FormInput, FormTextarea } from '@/components/FormInput';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -19,7 +20,12 @@ export default function EmployeeProfilePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profile, setProfile] = useState<Employee | null>(null);
-  const [newSkill, setNewSkill] = useState('');
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const skillDropdownRef = useRef<HTMLDivElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -103,6 +109,45 @@ export default function EmployeeProfilePage() {
     fetchProfile();
   }, [fetchProfile]);
 
+  // Fetch available skills
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setLoadingSkills(true);
+      try {
+        const response = await publicService.getSkills();
+        setAvailableSkills(response.skills);
+      } catch (err) {
+        console.error('Failed to load skills:', err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+    fetchSkills();
+  }, []);
+
+  // Update selected skill IDs when profile or available skills change
+  useEffect(() => {
+    if (profile && profile.skills_details && availableSkills.length > 0) {
+      // Map skill names to IDs
+      const skillIds = availableSkills
+        .filter((skill) => profile.skills_details?.includes(skill.name))
+        .map((skill) => skill.id);
+      setSelectedSkillIds(skillIds);
+    }
+  }, [profile, availableSkills]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (skillDropdownRef.current && !skillDropdownRef.current.contains(event.target as Node)) {
+        setShowSkillDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const onSubmit = async (data: EmployeeProfileFormData) => {
     try {
       setSaving(true);
@@ -128,9 +173,9 @@ export default function EmployeeProfilePage() {
         updates.push({ field: 'experience_details', value: data.experience_details });
       }
 
-      // Skills - only if array has items
-      if (data.skills_details && data.skills_details.length > 0) {
-        updates.push({ field: 'skills_details', value: data.skills_details });
+      // Skills - send skill IDs instead of names
+      if (selectedSkillIds && selectedSkillIds.length > 0) {
+        updates.push({ field: 'skills_details', value: selectedSkillIds });
       }
 
       // Check if there are any updates to send
@@ -193,16 +238,25 @@ export default function EmployeeProfilePage() {
     }
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setValue('skills_details', [...skills, newSkill.trim()]);
-      setNewSkill('');
-    }
+  const handleAddSkill = (skillId: string) => {
+    setSelectedSkillIds((prev) => [...prev, skillId]);
+    setSkillSearchQuery('');
+    setShowSkillDropdown(false);
   };
 
-  const handleRemoveSkill = (index: number) => {
-    setValue('skills_details', skills.filter((_, i) => i !== index));
+  const handleRemoveSkill = (skillId: string) => {
+    setSelectedSkillIds((prev) => prev.filter((id) => id !== skillId));
   };
+
+  const getSelectedSkills = () => {
+    return availableSkills.filter((skill) => selectedSkillIds.includes(skill.id));
+  };
+
+  const filteredSkills = availableSkills.filter(
+    (skill) =>
+      skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) &&
+      !selectedSkillIds.includes(skill.id)
+  );
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -352,7 +406,10 @@ export default function EmployeeProfilePage() {
                 <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                   {profile?.profile_photo_url && profile.profile_photo_status === 'approved' ? (
                     <img
-                      src={process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') + profile.profile_photo_url}
+                      src={
+                        profile.profile_photo_full_url ||
+                        (process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') + profile.profile_photo_url)
+                      }
                       alt={profile.name || 'Profile'}
                       className="w-full h-full object-cover"
                     />
@@ -718,47 +775,95 @@ export default function EmployeeProfilePage() {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Skills</h2>
 
-            {isEditing && (
-              <div className="mb-4 flex gap-2">
-                <input
-                  type="text"
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                  placeholder="Enter a skill and press Add"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-            )}
-
-            {skills.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No skills added yet</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill, index) => (
-                  <div
-                    key={index}
-                    className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full flex items-center gap-2"
-                  >
-                    <span>{skill}</span>
-                    {isEditing && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(index)}
-                        className="text-blue-600 hover:text-blue-800 font-bold"
+            {isEditing ? (
+              <div>
+                {/* Selected Skills Display */}
+                {getSelectedSkills().length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {getSelectedSkills().map((skill) => (
+                      <div
+                        key={skill.id}
+                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
                       >
-                        ×
-                      </button>
-                    )}
+                        <span>{skill.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill.id)}
+                          className="text-blue-600 hover:text-blue-800 font-bold"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* Search Input */}
+                <div className="relative" ref={skillDropdownRef}>
+                  <input
+                    type="text"
+                    value={skillSearchQuery}
+                    onChange={(e) => {
+                      setSkillSearchQuery(e.target.value);
+                      setShowSkillDropdown(true);
+                    }}
+                    onFocus={() => setShowSkillDropdown(true)}
+                    placeholder="Type to search skills..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={loadingSkills}
+                  />
+
+                  {/* Dropdown */}
+                  {showSkillDropdown && !loadingSkills && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredSkills.length === 0 ? (
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          {skillSearchQuery ? 'No skills found' : 'All skills selected'}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1 p-2">
+                          {filteredSkills.map((skill) => (
+                            <button
+                              key={skill.id}
+                              type="button"
+                              onClick={() => handleAddSkill(skill.id)}
+                              className="text-left px-3 py-2 text-sm text-gray-900 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none rounded border border-gray-200 hover:border-blue-300 transition-colors"
+                            >
+                              {skill.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {loadingSkills && (
+                    <div className="absolute right-3 top-2">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Selected: {selectedSkillIds.length} skill(s)
+                </p>
+              </div>
+            ) : (
+              <div>
+                {getSelectedSkills().length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No skills added yet</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {getSelectedSkills().map((skill) => (
+                      <div
+                        key={skill.id}
+                        className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full"
+                      >
+                        <span>{skill.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

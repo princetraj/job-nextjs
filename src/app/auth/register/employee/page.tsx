@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { authService } from '@/services/authService';
+import { publicService } from '@/services/publicService';
 import { handleApiError } from '@/lib/api';
+import { Skill } from '@/types';
 
 export default function EmployeeRegisterPage() {
   const router = useRouter();
@@ -36,8 +38,67 @@ export default function EmployeeRegisterPage() {
   const [step3Data, setStep3Data] = useState({
     education: [{ degree: '', university: '', year_start: '', year_end: '', field: '' }],
     experience: [{ company: '', title: '', year_start: '', year_end: '', description: '' }],
-    skills: '',
+    skills: [] as string[],
   });
+
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const skillDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setLoadingSkills(true);
+      try {
+        const response = await publicService.getSkills();
+        setAvailableSkills(response.skills);
+      } catch (err) {
+        console.error('Failed to load skills:', err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+    fetchSkills();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (skillDropdownRef.current && !skillDropdownRef.current.contains(event.target as Node)) {
+        setShowSkillDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredSkills = availableSkills.filter(
+    (skill) =>
+      skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) &&
+      !step3Data.skills.includes(skill.id)
+  );
+
+  const getSelectedSkills = () => {
+    return availableSkills.filter((skill) => step3Data.skills.includes(skill.id));
+  };
+
+  const handleAddSkill = (skillId: string) => {
+    setStep3Data((prev) => ({
+      ...prev,
+      skills: [...prev.skills, skillId],
+    }));
+    setSkillSearchQuery('');
+    setShowSkillDropdown(false);
+  };
+
+  const handleRemoveSkill = (skillId: string) => {
+    setStep3Data((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((id) => id !== skillId),
+    }));
+  };
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,11 +157,10 @@ export default function EmployeeRegisterPage() {
     setLoading(true);
 
     try {
-      const skillsArray = step3Data.skills.split(',').map((s) => s.trim()).filter((s) => s);
       await authService.registerEmployeeFinal(tempToken, {
         education: step3Data.education.filter((ed) => ed.degree),
         experience: step3Data.experience.filter((ex) => ex.company),
-        skills: skillsArray,
+        skills: step3Data.skills,
       });
       router.push('/employee/dashboard');
     } catch (err) {
@@ -109,6 +169,7 @@ export default function EmployeeRegisterPage() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -453,16 +514,78 @@ export default function EmployeeRegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Skills (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={step3Data.skills}
-                    onChange={(e) => setStep3Data({ ...step3Data, skills: e.target.value })}
-                    placeholder="JavaScript, React, Node.js"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+
+                  {/* Selected Skills Display */}
+                  {getSelectedSkills().length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {getSelectedSkills().map((skill) => (
+                        <div
+                          key={skill.id}
+                          className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
+                        >
+                          <span>{skill.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkill(skill.id)}
+                            className="text-blue-600 hover:text-blue-800 font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search Input */}
+                  <div className="relative" ref={skillDropdownRef}>
+                    <input
+                      type="text"
+                      value={skillSearchQuery}
+                      onChange={(e) => {
+                        setSkillSearchQuery(e.target.value);
+                        setShowSkillDropdown(true);
+                      }}
+                      onFocus={() => setShowSkillDropdown(true)}
+                      placeholder="Type to search skills..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={loadingSkills}
+                    />
+
+                    {/* Dropdown */}
+                    {showSkillDropdown && !loadingSkills && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {filteredSkills.length === 0 ? (
+                          <div className="px-4 py-2 text-sm text-gray-500">
+                            {skillSearchQuery ? 'No skills found' : 'All skills selected'}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-1 p-2">
+                            {filteredSkills.map((skill) => (
+                              <button
+                                key={skill.id}
+                                type="button"
+                                onClick={() => handleAddSkill(skill.id)}
+                                className="text-left px-3 py-2 text-sm text-gray-900 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none rounded border border-gray-200 hover:border-blue-300 transition-colors"
+                              >
+                                {skill.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {loadingSkills && (
+                      <div className="absolute right-3 top-2">
+                        <LoadingSpinner size="sm" />
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected: {step3Data.skills.length} skill(s)
+                  </p>
                 </div>
 
                 <div className="flex gap-4">

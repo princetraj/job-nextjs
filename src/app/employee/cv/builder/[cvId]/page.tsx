@@ -109,23 +109,39 @@ export default function CVBuilderPage() {
 
           <div className="border border-gray-200 rounded-lg p-8 bg-gray-50">
             {/* Header */}
-            <div className="text-center mb-6 pb-6 border-b border-gray-300">
-              <h1 className="text-3xl font-bold text-gray-900">{profile?.name}</h1>
-              <p className="text-gray-600 mt-2">{profile?.email}</p>
-              {profile?.mobile && <p className="text-gray-600">{profile.mobile}</p>}
-              {profile?.address && (
-                <p className="text-gray-600 mt-1">
-                  {[
-                    profile.address.street,
-                    profile.address.city,
-                    profile.address.state,
-                    profile.address.zip,
-                    profile.address.country,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
-              )}
+            <div className="mb-6 pb-6 border-b border-gray-300">
+              <div className="flex items-center gap-6">
+                {/* Profile Photo */}
+                {profile?.profile_photo_status === 'approved' && profile?.profile_photo_full_url && (
+                  <div className="flex-shrink-0">
+                    <img
+                      src={profile.profile_photo_full_url}
+                      alt={profile.name || 'Profile'}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
+                    />
+                  </div>
+                )}
+
+                {/* Header Info */}
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900">{profile?.name}</h1>
+                  <p className="text-gray-600 mt-2">{profile?.email}</p>
+                  {profile?.mobile && <p className="text-gray-600">{profile.mobile}</p>}
+                  {profile?.address && (
+                    <p className="text-gray-600 mt-1">
+                      {[
+                        profile.address.street,
+                        profile.address.city,
+                        profile.address.state,
+                        profile.address.zip,
+                        profile.address.country,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Education */}
@@ -244,6 +260,21 @@ export default function CVBuilderPage() {
             </button>
             .
           </p>
+          {profile?.profile_photo_status === 'approved' && profile?.profile_photo_full_url && (
+            <p className="text-green-900 text-sm mt-2">
+              <strong>✓</strong> Your approved profile photo will be included in the generated CV.
+            </p>
+          )}
+          {profile?.profile_photo_status === 'pending' && (
+            <p className="text-yellow-900 text-sm mt-2">
+              <strong>⚠</strong> Your profile photo is pending approval. Once approved, it will be included in your CV.
+            </p>
+          )}
+          {!profile?.profile_photo_url && (
+            <p className="text-gray-700 text-sm mt-2">
+              <strong>ℹ</strong> Upload a profile photo to make your CV more professional.
+            </p>
+          )}
         </div>
       </div>
     </div>

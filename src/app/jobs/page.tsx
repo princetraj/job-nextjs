@@ -26,6 +26,17 @@ export default function JobsPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [contactModal, setContactModal] = useState<{
+    show: boolean;
+    contact: {
+      company_name: string;
+      email: string;
+      contact: string;
+      address: any;
+      industry: string | null;
+    } | null;
+    alreadyViewed: boolean;
+  }>({ show: false, contact: null, alreadyViewed: false });
   const userType = getUserType();
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -105,6 +116,32 @@ export default function JobsPage() {
         showNotification('error', message);
       } else {
         showNotification('error', 'Failed to shortlist job');
+      }
+    }
+  };
+
+  const handleViewContact = async (jobId: string) => {
+    if (userType !== 'employee') {
+      showNotification('error', 'Please login as a job seeker to view contact details');
+      return;
+    }
+    try {
+      const response = await employeeService.viewEmployerContact(jobId);
+      setContactModal({
+        show: true,
+        contact: response.contact,
+        alreadyViewed: response.already_viewed,
+      });
+      if (!response.already_viewed) {
+        showNotification('success', `Contact details retrieved! ${response.contact_views_remaining === -1 ? 'Unlimited views remaining' : `${response.contact_views_remaining} views remaining`}`);
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to view contact details';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to view contact details');
       }
     }
   };
@@ -223,6 +260,7 @@ export default function JobsPage() {
                     job={job}
                     onApply={userType === 'employee' ? handleApply : undefined}
                     onShortlist={userType === 'employee' ? handleShortlist : undefined}
+                    onViewContact={userType === 'employee' ? handleViewContact : undefined}
                   />
                 ))}
               </div>
@@ -254,6 +292,85 @@ export default function JobsPage() {
         </div>
       </main>
       <Footer />
+
+      {/* Contact Details Modal */}
+      {contactModal.show && contactModal.contact && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Employer Contact Details</h2>
+              <button
+                onClick={() => setContactModal({ show: false, contact: null, alreadyViewed: false })}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {contactModal.alreadyViewed && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  You have previously viewed this contact. No charge applied.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Company Name</label>
+                <p className="text-lg text-gray-900">{contactModal.contact.company_name}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Email</label>
+                <a href={`mailto:${contactModal.contact.email}`} className="text-lg text-blue-600 hover:underline block">
+                  {contactModal.contact.email}
+                </a>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Phone</label>
+                <a href={`tel:${contactModal.contact.contact}`} className="text-lg text-blue-600 hover:underline block">
+                  {contactModal.contact.contact}
+                </a>
+              </div>
+
+              {contactModal.contact.industry && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Industry</label>
+                  <p className="text-lg text-gray-900">{contactModal.contact.industry}</p>
+                </div>
+              )}
+
+              {contactModal.contact.address && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Address</label>
+                  <p className="text-gray-900">
+                    {[
+                      contactModal.contact.address.street,
+                      contactModal.contact.address.city,
+                      contactModal.contact.address.state,
+                      contactModal.contact.address.zip,
+                      contactModal.contact.address.country,
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setContactModal({ show: false, contact: null, alreadyViewed: false })}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

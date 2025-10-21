@@ -80,6 +80,34 @@ export default function ShortlistedPage() {
     }
   };
 
+  const handleViewContact = async (jobId: string) => {
+    try {
+      const response = await employeeService.viewEmployerContact(jobId);
+      const contact = response.contact;
+      const contactInfo = `
+Company: ${contact.company_name}
+Email: ${contact.email}
+Phone: ${contact.contact}
+${contact.industry ? `Industry: ${contact.industry}` : ''}
+${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).join(', ')}` : ''}
+      `.trim();
+
+      alert(contactInfo);
+
+      if (!response.already_viewed) {
+        showNotification('success', `Contact details retrieved! ${response.contact_views_remaining === -1 ? 'Unlimited views remaining' : `${response.contact_views_remaining} views remaining`}`);
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to view contact details';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to view contact details');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -291,19 +319,40 @@ export default function ShortlistedPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                      {!job.is_applied && (
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
+                      <div className="flex gap-3 flex-1">
+                        {!job.is_applied && (
+                          <button
+                            onClick={() => handleApply(job.id)}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                          >
+                            Apply Now
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleApply(job.id)}
-                          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                          onClick={() => handleViewContact(job.id)}
+                          className="flex-1 bg-white border border-indigo-600 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors font-medium inline-flex items-center justify-center"
                         >
-                          Apply Now
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                          </svg>
+                          View Contact
                         </button>
-                      )}
+                      </div>
                       <button
                         onClick={() => handleRemoveFromShortlist(job.shortlist_id || job.id, job.id)}
                         disabled={removingId === job.id}
-                        className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {removingId === job.id ? (
                           <>

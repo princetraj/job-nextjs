@@ -1,8 +1,118 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import JobCard from '@/components/JobCard';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { publicService } from '@/services/publicService';
+import { employeeService } from '@/services/employeeService';
+import { Job } from '@/types';
+import { getUserType } from '@/lib/api';
 
 export default function Home() {
+  const [latestJobs, setLatestJobs] = useState<Job[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const userType = getUserType();
+
+  useEffect(() => {
+    fetchLatestJobs();
+  }, []);
+
+  const fetchLatestJobs = async () => {
+    setLoadingJobs(true);
+    try {
+      const response = await publicService.getLatestJobs(10);
+      setLatestJobs(response.jobs);
+    } catch (err) {
+      console.error('Error fetching latest jobs:', err);
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleApply = async (jobId: string) => {
+    if (userType !== 'employee') {
+      showNotification('error', 'Please login as a job seeker to apply for jobs');
+      return;
+    }
+    try {
+      await employeeService.applyForJob(jobId);
+      showNotification('success', 'Application submitted successfully!');
+      fetchLatestJobs(); // Refresh jobs to update applied status
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to apply for job';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to apply for job');
+      }
+    }
+  };
+
+  const handleShortlist = async (jobId: string) => {
+    if (userType !== 'employee') {
+      showNotification('error', 'Please login as a job seeker to shortlist jobs');
+      return;
+    }
+    try {
+      await employeeService.shortlistJob(jobId);
+      showNotification('success', 'Job added to shortlist!');
+      fetchLatestJobs(); // Refresh jobs to update shortlisted status
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to shortlist job';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to shortlist job');
+      }
+    }
+  };
+
+  const handleViewContact = async (jobId: string) => {
+    if (userType !== 'employee') {
+      showNotification('error', 'Please login as a job seeker to view contact details');
+      return;
+    }
+    try {
+      const response = await employeeService.viewEmployerContact(jobId);
+      const contact = response.contact;
+      const contactInfo = `
+Company: ${contact.company_name}
+Email: ${contact.email}
+Phone: ${contact.contact}
+${contact.industry ? `Industry: ${contact.industry}` : ''}
+${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).join(', ')}` : ''}
+      `.trim();
+
+      alert(contactInfo);
+
+      if (!response.already_viewed) {
+        showNotification('success', `Contact details retrieved! ${response.contact_views_remaining === -1 ? 'Unlimited views remaining' : `${response.contact_views_remaining} views remaining`}`);
+      }
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to view contact details';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to view contact details');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -114,40 +224,107 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Job Categories Section - Simplified */}
+        {/* Latest Jobs Section */}
         <div className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Browse by Category</h2>
-              <p className="text-lg text-gray-600">Find your perfect role in these popular fields</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Latest Job Opportunities</h2>
+              <p className="text-lg text-gray-600">Discover the newest openings from top employers</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {[
-                { name: 'Technology', icon: '💻', jobs: '2,500+' },
-                { name: 'Healthcare', icon: '🏥', jobs: '1,200+' },
-                { name: 'Finance', icon: '💼', jobs: '1,800+' },
-                { name: 'Education', icon: '📚', jobs: '950+' },
-                { name: 'Marketing', icon: '📊', jobs: '1,400+' },
-                { name: 'Design', icon: '🎨', jobs: '800+' },
-                { name: 'Engineering', icon: '⚙️', jobs: '2,100+' },
-                { name: 'Sales', icon: '📈', jobs: '1,600+' },
-              ].map((category) => (
-                <Link
-                  key={category.name}
-                  href="/jobs"
-                  className="group bg-gray-50 hover:bg-blue-50 rounded-xl p-6 transition-all duration-300 border border-gray-200 hover:border-blue-300"
-                >
-                  <div className="text-center">
-                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                      {category.icon}
-                    </div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">{category.name}</h3>
-                    <p className="text-sm text-gray-500">{category.jobs}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {/* Notification */}
+            {notification && (
+              <div
+                className={`mb-6 p-4 rounded-lg ${
+                  notification.type === 'success'
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-red-50 border border-red-200'
+                }`}
+              >
+                <div className="flex items-center">
+                  {notification.type === 'success' ? (
+                    <svg
+                      className="w-5 h-5 text-green-600 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5 text-red-600 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  <p
+                    className={`text-sm font-medium ${
+                      notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                    }`}
+                  >
+                    {notification.message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Job Listings */}
+            {loadingJobs ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : latestJobs.length === 0 ? (
+              <div className="bg-gray-50 rounded-lg p-12 text-center">
+                <p className="text-gray-600 text-lg">No jobs available at the moment. Check back soon!</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {latestJobs.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onApply={userType === 'employee' ? handleApply : undefined}
+                      onShortlist={userType === 'employee' ? handleShortlist : undefined}
+                      onViewContact={userType === 'employee' ? handleViewContact : undefined}
+                    />
+                  ))}
+                </div>
+
+                {/* View More Button */}
+                <div className="text-center mt-8">
+                  <Link
+                    href="/jobs"
+                    className="inline-flex items-center bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    View All Jobs
+                    <svg
+                      className="w-5 h-5 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

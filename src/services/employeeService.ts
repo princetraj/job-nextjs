@@ -32,6 +32,23 @@ export const employeeService = {
     await api.post(`/employee/jobs/${jobId}/apply`);
   },
 
+  // View Employer Contact
+  async viewEmployerContact(jobId: string): Promise<{
+    message: string;
+    contact: {
+      company_name: string;
+      email: string;
+      contact: string;
+      address: any;
+      industry: string | null;
+    };
+    contact_views_remaining: number;
+    already_viewed: boolean;
+  }> {
+    const response = await api.post(`/employee/jobs/${jobId}/view-contact`);
+    return response.data;
+  },
+
   // Get Applied Jobs
   async getAppliedJobs(): Promise<{ jobs: Job[] }> {
     const response = await api.get('/employee/jobs/applied');
@@ -52,6 +69,12 @@ export const employeeService = {
   // Remove from Shortlist
   async removeFromShortlist(id: string): Promise<void> {
     await api.delete(`/employee/jobs/shortlist/${id}`);
+  },
+
+  // Get Contact Viewed Jobs
+  async getContactViewedJobs(): Promise<{ jobs: Job[] }> {
+    const response = await api.get('/employee/jobs/contact-viewed');
+    return response.data;
   },
 
   // Generate CV
@@ -147,6 +170,29 @@ export const employeeService = {
   // Get Profile Photo Status
   async getProfilePhotoStatus(): Promise<{ profile_photo_url: string | null; profile_photo_status: string | null; profile_photo_rejection_reason: string | null }> {
     const response = await api.get('/employee/profile/photo/status');
+    return response.data;
+  },
+
+  // Get Current Plan
+  async getCurrentPlan(): Promise<{
+    plan: {
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      is_default: boolean;
+      started_at: string;
+      expires_at: string | null;
+      is_active: boolean;
+      is_expired: boolean;
+      days_remaining: number | null;
+      jobs_can_apply: number;
+      jobs_remaining: number | null;
+      contact_details_can_view: number;
+      contact_views_remaining: number | null;
+    };
+  }> {
+    const response = await api.get('/employee/plan/current');
     return response.data;
   },
 };

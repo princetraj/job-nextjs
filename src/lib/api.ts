@@ -96,7 +96,7 @@ export const planAPI = {
   // Get available plans for upgrade (excludes default plans)
   getAvailablePlans: () => api.get('/employee/plan/available'),
 
-  // Upgrade to a new plan
+  // Upgrade to a new plan (legacy - direct upgrade without payment)
   upgradePlan: (planId: string, paymentId?: string) =>
     api.post('/employee/plan/upgrade', { plan_id: planId, payment_id: paymentId }),
 
@@ -106,4 +106,24 @@ export const planAPI = {
   // Get all plans (public)
   getAllPlans: (type?: string) =>
     api.get('/plans/', { params: type ? { type } : {} }),
+};
+
+// Payment APIs (Razorpay Integration)
+export const paymentAPI = {
+  // Create Razorpay order
+  createRazorpayOrder: (planId: string) =>
+    api.post('/payments/razorpay/create-order', { plan_id: planId }),
+
+  // Verify Razorpay payment
+  verifyRazorpayPayment: (paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => api.post('/payments/razorpay/verify', paymentData),
+
+  // Get order details
+  getOrderDetails: (orderId: string) => api.get(`/payments/orders/${orderId}`),
+
+  // Get transaction history
+  getTransactionHistory: () => api.get('/payments/transactions'),
 };
