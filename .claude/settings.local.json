@@ -17,7 +17,8 @@
       "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\wamp64\\www\\jobprotal\\job-portal-frontend'' -Filter ''nul'' -Force | Select-Object FullName, Attributes\")",
       "Bash(powershell -Command \"$path = ''\\?\\C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\nul''; [System.IO.File]::Delete($path); if (-not (Test-Path ''nul'')) { Write-Host ''Successfully removed'' } else { Write-Host ''Still exists'' }\")",
       "Bash(cmd.exe /c \"del \\\\?\\C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\nul\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

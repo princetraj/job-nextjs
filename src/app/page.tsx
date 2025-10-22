@@ -28,7 +28,7 @@ export default function Home() {
     setLoadingJobs(true);
     try {
       const response = await publicService.getLatestJobs(10);
-      setLatestJobs(response.jobs.data);
+      setLatestJobs(response.jobs);
     } catch (err) {
       console.error('Error fetching latest jobs:', err);
     } finally {
@@ -283,7 +283,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
               <div className="flex justify-center py-12">
                 <LoadingSpinner size="lg" />
               </div>
-            ) : latestJobs.length === 0 ? (
+            ) : !latestJobs || latestJobs.length === 0 ? (
               <div className="bg-gray-50 rounded-lg p-12 text-center">
                 <p className="text-gray-600 text-lg">No jobs available at the moment. Check back soon!</p>
               </div>

@@ -52,7 +52,7 @@ export const publicService = {
   },
 
   // Get Latest Jobs (for homepage)
-  async getLatestJobs(limit: number = 10): Promise<{ jobs: PaginatedResponse<Job> }> {
+  async getLatestJobs(limit: number = 10): Promise<{ jobs: Job[] }> {
     const response = await api.get('/jobs/search', { params: { limit } });
     return response.data;
   },
