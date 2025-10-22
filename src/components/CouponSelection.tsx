@@ -44,12 +44,13 @@ export default function CouponSelection({
       const response = await paymentAPI.getMyAssignedCoupons();
       setCoupons(response.data.coupons || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Fetch coupons error:', err);
 
       // Don't show error if it's just no coupons available
       // Only show error for actual failures
-      if (err?.response?.status !== 401) {
+      const error = err as { response?: { status?: number } };
+      if (error?.response?.status !== 401) {
         const errorMessage = handleApiError(err);
         console.warn('Could not load coupons:', errorMessage);
       }
@@ -75,11 +76,12 @@ export default function CouponSelection({
       } else {
         setError(response.data.message || 'Invalid coupon');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Coupon validation error:', err);
 
       // Check if it's an authentication error
-      if (err?.response?.status === 401) {
+      const error = err as { response?: { status?: number } };
+      if (error?.response?.status === 401) {
         setError('Session expired. Please login again.');
       } else {
         const errorMessage = handleApiError(err);
