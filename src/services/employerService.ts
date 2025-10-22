@@ -2,10 +2,24 @@
 import api from '@/lib/api';
 import { Employer, Job, Application } from '@/types';
 
+interface EmployerPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  is_default: boolean;
+  is_active: boolean;
+  is_expired: boolean;
+  jobs_can_post: number;
+  contact_views_remaining: number | null;
+  employee_contact_details_can_view: number;
+  days_remaining: number | null;
+  expires_at: string | null;
+}
+
 export const employerService = {
   // Get Profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getProfile(): Promise<{ user: Employer; plan: any }> {
+  async getProfile(): Promise<{ user: Employer; plan: EmployerPlan | null }> {
     const response = await api.get('/employer/profile');
     return response.data;
   },
@@ -92,7 +106,7 @@ export const employerService = {
     contact_details: {
       email: string;
       mobile: string;
-      address: any;
+      address: Record<string, string | null> | null;
     };
     can_download_cv: boolean;
     views_remaining: number | string;

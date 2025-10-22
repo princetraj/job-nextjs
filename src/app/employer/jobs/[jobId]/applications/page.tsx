@@ -7,8 +7,19 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { employerService } from '@/services/employerService';
-import { Application, Job, Employer } from '@/types';
+import { Application, Job, Employer, Address } from '@/types';
 import { handleApiError } from '@/lib/api';
+
+interface ContactDetails {
+  email: string;
+  mobile: string;
+  address: Address | Record<string, string | null> | null;
+}
+
+interface ApplicationWithContactInfo extends Application {
+  contact_details_viewed?: boolean;
+  employee_allows_free_contact_view?: boolean;
+}
 
 export default function JobApplicationsPage() {
   const params = useParams();
@@ -16,18 +27,14 @@ export default function JobApplicationsPage() {
   const jobId = params.jobId as string;
 
   const [job, setJob] = useState<Job | null>(null);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applications, setApplications] = useState<ApplicationWithContactInfo[]>([]);
   const [profile, setProfile] = useState<Employer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // Track which applications have unlocked contact details
-  const [unlockedContacts, setUnlockedContacts] = useState<Record<string, {
-    email: string;
-    mobile: string;
-    address: any;
-  }>>({});
+  const [unlockedContacts, setUnlockedContacts] = useState<Record<string, ContactDetails>>({});
   const [viewingContact, setViewingContact] = useState<string | null>(null);
 
   // Interview scheduling modal state
@@ -56,21 +63,17 @@ export default function JobApplicationsPage() {
 
       // Initialize unlocked contacts from applications that have already been viewed
       // OR have the free contact view feature enabled
-      const initialUnlockedContacts: Record<string, {
-        email: string;
-        mobile: string;
-        address: any;
-      }> = {};
+      const initialUnlockedContacts: Record<string, ContactDetails> = {};
 
-      applicationsData.applications.forEach((app: any) => {
+      applicationsData.applications.forEach((app: ApplicationWithContactInfo) => {
         // Show contacts if:
         // 1. Already viewed by employer, OR
         // 2. Employee's plan allows free contact viewing
-        if ((app.contact_details_viewed || app.employee_allows_free_contact_view) && app.employee.email) {
+        if ((app.contact_details_viewed || app.employee_allows_free_contact_view) && app.employee?.email) {
           initialUnlockedContacts[app.id] = {
             email: app.employee.email,
-            mobile: app.employee.mobile,
-            address: app.employee.address,
+            mobile: app.employee.mobile || '',
+            address: app.employee.address || null,
           };
         }
       });

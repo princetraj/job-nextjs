@@ -1,6 +1,6 @@
 // Public Services (No Auth Required)
 import api from '@/lib/api';
-import { Plan, Industry, Location, Category, Skill, Coupon } from '@/types';
+import { Plan, Industry, Location, Category, Skill, Coupon, Job, PaginatedResponse } from '@/types';
 
 export const publicService = {
   // Get All Plans
@@ -46,14 +46,13 @@ export const publicService = {
     category_id?: string;
     page?: number;
     limit?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<any> {
+  }): Promise<{ jobs: PaginatedResponse<Job> }> {
     const response = await api.get('/jobs/search', { params });
     return response.data;
   },
 
   // Get Latest Jobs (for homepage)
-  async getLatestJobs(limit: number = 10): Promise<any> {
+  async getLatestJobs(limit: number = 10): Promise<{ jobs: PaginatedResponse<Job> }> {
     const response = await api.get('/jobs/search', { params: { limit } });
     return response.data;
   },

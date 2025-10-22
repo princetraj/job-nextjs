@@ -28,7 +28,7 @@ export default function Home() {
     setLoadingJobs(true);
     try {
       const response = await publicService.getLatestJobs(10);
-      setLatestJobs(response.jobs);
+      setLatestJobs(response.jobs.data);
     } catch (err) {
       console.error('Error fetching latest jobs:', err);
     } finally {

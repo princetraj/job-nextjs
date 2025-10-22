@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { publicService } from '@/services/publicService';
 import { handleApiError } from '@/lib/api';
 import { Plan } from '@/types';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-export default function PlansPage() {
+function PlansContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const type = (searchParams.get('type') as 'employee' | 'employer') || 'employee';
@@ -312,5 +312,13 @@ export default function PlansPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PlansPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner size="lg" /></div>}>
+      <PlansContent />
+    </Suspense>
   );
 }

@@ -103,6 +103,7 @@ export interface Plan {
   price: string;
   validity_days: number;
   features?: PlanFeature[];
+  is_default?: boolean;
 }
 
 export interface PlanFeature {

@@ -10,12 +10,29 @@ import { employeeService } from '@/services/employeeService';
 import { Employee, Job } from '@/types';
 import { handleApiError } from '@/lib/api';
 
+interface CurrentPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  is_default: boolean;
+  started_at: string;
+  expires_at: string | null;
+  is_active: boolean;
+  is_expired: boolean;
+  days_remaining: number | null;
+  jobs_can_apply: number;
+  jobs_remaining: number | null;
+  contact_details_can_view: number;
+  contact_views_remaining: number | null;
+}
+
 export default function EmployeeDashboard() {
   const [profile, setProfile] = useState<Employee | null>(null);
   const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
   const [shortlistedJobs, setShortlistedJobs] = useState<Job[]>([]);
   const [contactViewedJobs, setContactViewedJobs] = useState<Job[]>([]);
-  const [currentPlan, setCurrentPlan] = useState<any>(null);
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlan | null>(null);
   const [activeTab, setActiveTab] = useState<'applied' | 'shortlisted' | 'contact'>('applied');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

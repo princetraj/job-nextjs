@@ -2,17 +2,32 @@
 import api from '@/lib/api';
 import { Employee, Job, PaginatedResponse, CVRequest, CV } from '@/types';
 
+interface EmployeePlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  is_default: boolean;
+  started_at: string;
+  expires_at: string | null;
+  is_active: boolean;
+  is_expired: boolean;
+  days_remaining: number | null;
+  jobs_can_apply: number;
+  jobs_remaining: number | null;
+  contact_details_can_view: number;
+  contact_views_remaining: number | null;
+}
+
 export const employeeService = {
   // Get Profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getProfile(): Promise<{ user: Employee; plan: any }> {
+  async getProfile(): Promise<{ user: Employee; plan: EmployeePlan | null }> {
     const response = await api.get('/employee/profile');
     return response.data;
   },
 
   // Update Profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async updateProfile(field: string, value: any): Promise<void> {
+  async updateProfile(field: string, value: unknown): Promise<void> {
     await api.put('/employee/profile/update', { field, value });
   },
 
@@ -39,7 +54,7 @@ export const employeeService = {
       company_name: string;
       email: string;
       contact: string;
-      address: any;
+      address: Record<string, string | null> | null;
       industry: string | null;
     };
     contact_views_remaining: number;

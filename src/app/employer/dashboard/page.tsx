@@ -9,11 +9,30 @@ import { employerService } from '@/services/employerService';
 import { Employer, Job } from '@/types';
 import { handleApiError } from '@/lib/api';
 
+interface EmployerPlanDetails {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  is_default: boolean;
+  is_active: boolean;
+  is_expired: boolean;
+  jobs_can_post: number;
+  contact_views_remaining: number | null;
+  employee_contact_details_can_view: number;
+  days_remaining: number | null;
+  expires_at: string | null;
+}
+
+interface JobWithApplications extends Job {
+  applications_count?: number;
+  new_applications_count?: number;
+}
+
 export default function EmployerDashboard() {
   const [profile, setProfile] = useState<Employer | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [planDetails, setPlanDetails] = useState<any | null>(null);
+  const [jobs, setJobs] = useState<JobWithApplications[]>([]);
+  const [planDetails, setPlanDetails] = useState<EmployerPlanDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -227,11 +246,11 @@ export default function EmployerDashboard() {
                   <p className="text-gray-600 text-sm font-medium">Total Applications</p>
                   <div className="flex items-center gap-3">
                     <p className="text-3xl font-bold text-gray-900">
-                      {jobs.reduce((sum, job) => sum + ((job as any).applications_count || 0), 0)}
+                      {jobs.reduce((sum, job) => sum + (job.applications_count || 0), 0)}
                     </p>
-                    {jobs.reduce((sum, job) => sum + ((job as any).new_applications_count || 0), 0) > 0 && (
+                    {jobs.reduce((sum, job) => sum + (job.new_applications_count || 0), 0) > 0 && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
-                        +{jobs.reduce((sum, job) => sum + ((job as any).new_applications_count || 0), 0)} New
+                        +{jobs.reduce((sum, job) => sum + (job.new_applications_count || 0), 0)} New
                       </span>
                     )}
                   </div>
@@ -513,9 +532,9 @@ export default function EmployerDashboard() {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-600">
-                          Applications: {(job as any).applications_count || 0}
+                          Applications: {job.applications_count || 0}
                         </span>
-                        {(job as any).new_applications_count > 0 && (
+                        {job.new_applications_count && job.new_applications_count > 0 && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
                             <svg
                               className="w-3 h-3 mr-1"
@@ -528,7 +547,7 @@ export default function EmployerDashboard() {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {(job as any).new_applications_count} New
+                            {job.new_applications_count} New
                           </span>
                         )}
                       </div>

@@ -7,8 +7,16 @@ import JobCard from '@/components/JobCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { publicService } from '@/services/publicService';
 import { employeeService } from '@/services/employeeService';
-import { Job, Location, Category } from '@/types';
+import { Job, Location, Category, Address } from '@/types';
 import { getUserType } from '@/lib/api';
+
+interface ContactInfo {
+  company_name: string;
+  email: string;
+  contact: string;
+  address: Address | Record<string, string | null> | null;
+  industry: string | null;
+}
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -28,13 +36,7 @@ export default function JobsPage() {
   } | null>(null);
   const [contactModal, setContactModal] = useState<{
     show: boolean;
-    contact: {
-      company_name: string;
-      email: string;
-      contact: string;
-      address: any;
-      industry: string | null;
-    } | null;
+    contact: ContactInfo | null;
     alreadyViewed: boolean;
   }>({ show: false, contact: null, alreadyViewed: false });
   const userType = getUserType();
