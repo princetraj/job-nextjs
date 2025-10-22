@@ -110,9 +110,12 @@ export const planAPI = {
 
 // Payment APIs (Razorpay Integration)
 export const paymentAPI = {
-  // Create Razorpay order
-  createRazorpayOrder: (planId: string) =>
-    api.post('/payments/razorpay/create-order', { plan_id: planId }),
+  // Create Razorpay order (with optional coupon)
+  createRazorpayOrder: (planId: string, couponCode?: string) =>
+    api.post('/payments/razorpay/create-order', {
+      plan_id: planId,
+      coupon_code: couponCode
+    }),
 
   // Verify Razorpay payment
   verifyRazorpayPayment: (paymentData: {
@@ -126,4 +129,11 @@ export const paymentAPI = {
 
   // Get transaction history
   getTransactionHistory: () => api.get('/payments/transactions'),
+
+  // Get user's assigned coupons
+  getMyAssignedCoupons: () => api.get('/coupons/my-coupons'),
+
+  // Validate coupon for a plan
+  validateCoupon: (couponCode: string, planId: string) =>
+    api.post('/coupons/validate', { coupon_code: couponCode, plan_id: planId }),
 };

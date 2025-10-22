@@ -18,7 +18,8 @@
       "Bash(powershell -Command \"$path = ''\\?\\C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\nul''; [System.IO.File]::Delete($path); if (-not (Test-Path ''nul'')) { Write-Host ''Successfully removed'' } else { Write-Host ''Still exists'' }\")",
       "Bash(cmd.exe /c \"del \\\\?\\C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\nul\")",
       "Bash(rm:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
