@@ -22,12 +22,15 @@ export default function EmployeeProfilePage() {
   const [profile, setProfile] = useState<Employee | null>(null);
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [customSkills, setCustomSkills] = useState<string[]>([]);
   const [loadingSkills, setLoadingSkills] = useState(false);
   const [skillSearchQuery, setSkillSearchQuery] = useState('');
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const skillDropdownRef = useRef<HTMLDivElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1);
+  const skillInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -125,14 +128,24 @@ export default function EmployeeProfilePage() {
     fetchSkills();
   }, []);
 
-  // Update selected skill IDs when profile or available skills change
+  // Update selected skill IDs and custom skills when profile or available skills change
   useEffect(() => {
     if (profile && profile.skills_details && availableSkills.length > 0) {
-      // Map skill names to IDs
-      const skillIds = availableSkills
-        .filter((skill) => profile.skills_details?.includes(skill.name))
-        .map((skill) => skill.id);
+      // Separate skill names into IDs (existing) and custom names (new)
+      const skillIds: string[] = [];
+      const customSkillNames: string[] = [];
+
+      profile.skills_details.forEach((skillName) => {
+        const existingSkill = availableSkills.find((skill) => skill.name === skillName);
+        if (existingSkill) {
+          skillIds.push(existingSkill.id);
+        } else {
+          customSkillNames.push(skillName);
+        }
+      });
+
       setSelectedSkillIds(skillIds);
+      setCustomSkills(customSkillNames);
     }
   }, [profile, availableSkills]);
 
@@ -141,12 +154,26 @@ export default function EmployeeProfilePage() {
     const handleClickOutside = (event: MouseEvent) => {
       if (skillDropdownRef.current && !skillDropdownRef.current.contains(event.target as Node)) {
         setShowSkillDropdown(false);
+        setSelectedDropdownIndex(-1);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Reset selected index when search query changes
+  useEffect(() => {
+    setSelectedDropdownIndex(-1);
+  }, [skillSearchQuery]);
+
+  // Scroll selected dropdown item into view
+  useEffect(() => {
+    if (selectedDropdownIndex >= 0 && showSkillDropdown) {
+      const selectedElement = document.querySelector(`[data-skill-index="${selectedDropdownIndex}"]`);
+      selectedElement?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedDropdownIndex, showSkillDropdown]);
 
   const onSubmit = async (data: EmployeeProfileFormData) => {
     try {
@@ -173,9 +200,11 @@ export default function EmployeeProfilePage() {
         updates.push({ field: 'experience_details', value: data.experience_details });
       }
 
-      // Skills - send skill IDs instead of names
-      if (selectedSkillIds && selectedSkillIds.length > 0) {
-        updates.push({ field: 'skills_details', value: selectedSkillIds });
+      // Skills - send both skill IDs and custom skill names
+      if ((selectedSkillIds && selectedSkillIds.length > 0) || (customSkills && customSkills.length > 0)) {
+        // Combine skill IDs and custom skill names
+        const allSkills = [...selectedSkillIds, ...customSkills];
+        updates.push({ field: 'skills_details', value: allSkills });
       }
 
       // Check if there are any updates to send
@@ -235,6 +264,24 @@ export default function EmployeeProfilePage() {
         experience_details: profile.experience_details || [],
         skills_details: profile.skills_details || [],
       });
+
+      // Reset skills to original values
+      if (profile.skills_details && availableSkills.length > 0) {
+        const skillIds: string[] = [];
+        const customSkillNames: string[] = [];
+
+        profile.skills_details.forEach((skillName) => {
+          const existingSkill = availableSkills.find((skill) => skill.name === skillName);
+          if (existingSkill) {
+            skillIds.push(existingSkill.id);
+          } else {
+            customSkillNames.push(skillName);
+          }
+        });
+
+        setSelectedSkillIds(skillIds);
+        setCustomSkills(customSkillNames);
+      }
     }
   };
 
@@ -242,10 +289,37 @@ export default function EmployeeProfilePage() {
     setSelectedSkillIds((prev) => [...prev, skillId]);
     setSkillSearchQuery('');
     setShowSkillDropdown(false);
+    setSelectedDropdownIndex(-1);
+  };
+
+  const handleAddCustomSkill = () => {
+    const trimmedSkill = skillSearchQuery.trim();
+    if (!trimmedSkill) return;
+
+    // Check if it already exists in selected skills
+    const existingSkill = availableSkills.find((skill) => skill.name.toLowerCase() === trimmedSkill.toLowerCase());
+    if (existingSkill) {
+      // If it's a database skill, add by ID
+      if (!selectedSkillIds.includes(existingSkill.id)) {
+        handleAddSkill(existingSkill.id);
+      }
+    } else {
+      // Add as custom skill if not already added
+      if (!customSkills.some((skill) => skill.toLowerCase() === trimmedSkill.toLowerCase())) {
+        setCustomSkills((prev) => [...prev, trimmedSkill]);
+      }
+    }
+    setSkillSearchQuery('');
+    setShowSkillDropdown(false);
+    setSelectedDropdownIndex(-1);
   };
 
   const handleRemoveSkill = (skillId: string) => {
     setSelectedSkillIds((prev) => prev.filter((id) => id !== skillId));
+  };
+
+  const handleRemoveCustomSkill = (skillName: string) => {
+    setCustomSkills((prev) => prev.filter((name) => name !== skillName));
   };
 
   const getSelectedSkills = () => {
@@ -257,6 +331,61 @@ export default function EmployeeProfilePage() {
       skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) &&
       !selectedSkillIds.includes(skill.id)
   );
+
+  // Highlight matching text in skill names
+  const highlightMatch = (text: string, query: string) => {
+    if (!query.trim()) return text;
+
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, index) =>
+          part.toLowerCase() === query.toLowerCase() ? (
+            <strong key={index} className="font-semibold text-blue-700">{part}</strong>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </>
+    );
+  };
+
+  // Handle keyboard navigation in dropdown
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSkillDropdown || loadingSkills) return;
+
+    const totalOptions = filteredSkills.length > 0 ? filteredSkills.length : 1; // 1 for custom skill option
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedDropdownIndex((prev) => (prev < totalOptions - 1 ? prev + 1 : prev));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedDropdownIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedDropdownIndex >= 0) {
+          if (filteredSkills.length > 0 && selectedDropdownIndex < filteredSkills.length) {
+            // Select from filtered skills
+            handleAddSkill(filteredSkills[selectedDropdownIndex].id);
+          } else {
+            // Add custom skill
+            handleAddCustomSkill();
+          }
+        } else {
+          handleAddCustomSkill();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowSkillDropdown(false);
+        setSelectedDropdownIndex(-1);
+        break;
+    }
+  };
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -778,18 +907,38 @@ export default function EmployeeProfilePage() {
             {isEditing ? (
               <div>
                 {/* Selected Skills Display */}
-                {getSelectedSkills().length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
+                {(getSelectedSkills().length > 0 || customSkills.length > 0) && (
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {getSelectedSkills().map((skill) => (
                       <div
                         key={skill.id}
-                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
+                        className="group bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-full flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow transition-all duration-200"
                       >
                         <span>{skill.name}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveSkill(skill.id)}
-                          className="text-blue-600 hover:text-blue-800 font-bold"
+                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center transition-all duration-150"
+                          title="Remove skill"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {customSkills.map((skillName) => (
+                      <div
+                        key={skillName}
+                        className="group bg-gradient-to-r from-green-50 to-green-100 border border-green-200 text-green-800 px-3 py-1.5 rounded-full flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow transition-all duration-200"
+                      >
+                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                        </svg>
+                        <span>{skillName}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomSkill(skillName)}
+                          className="text-green-600 hover:text-green-800 hover:bg-green-200 rounded-full w-4 h-4 flex items-center justify-center transition-all duration-150"
+                          title="Remove custom skill"
                         >
                           ×
                         </button>
@@ -800,40 +949,153 @@ export default function EmployeeProfilePage() {
 
                 {/* Search Input */}
                 <div className="relative" ref={skillDropdownRef}>
-                  <input
-                    type="text"
-                    value={skillSearchQuery}
-                    onChange={(e) => {
-                      setSkillSearchQuery(e.target.value);
-                      setShowSkillDropdown(true);
-                    }}
-                    onFocus={() => setShowSkillDropdown(true)}
-                    placeholder="Type to search skills..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={loadingSkills}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      ref={skillInputRef}
+                      type="text"
+                      value={skillSearchQuery}
+                      onChange={(e) => {
+                        setSkillSearchQuery(e.target.value);
+                        setShowSkillDropdown(true);
+                      }}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => setShowSkillDropdown(true)}
+                      placeholder="Type to search or add custom skill..."
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      disabled={loadingSkills}
+                      autoComplete="off"
+                    />
+                    {skillSearchQuery.trim() && (
+                      <button
+                        type="button"
+                        onClick={handleAddCustomSkill}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow"
+                      >
+                        + Add
+                      </button>
+                    )}
+                  </div>
 
                   {/* Dropdown */}
-                  {showSkillDropdown && !loadingSkills && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {filteredSkills.length === 0 ? (
-                        <div className="px-4 py-2 text-sm text-gray-500">
-                          {skillSearchQuery ? 'No skills found' : 'All skills selected'}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1 p-2">
-                          {filteredSkills.map((skill) => (
+                  {showSkillDropdown && !loadingSkills && skillSearchQuery && (
+                    <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden animate-fadeIn">
+                      <div className="overflow-y-auto max-h-80">
+                        {filteredSkills.length === 0 ? (
+                          <div className="p-2">
+                            <div className="px-3 py-2 text-xs text-gray-400 mb-1">
+                              No matching skills
+                            </div>
                             <button
-                              key={skill.id}
                               type="button"
-                              onClick={() => handleAddSkill(skill.id)}
-                              className="text-left px-3 py-2 text-sm text-gray-900 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none rounded border border-gray-200 hover:border-blue-300 transition-colors"
+                              onClick={handleAddCustomSkill}
+                              data-skill-index="0"
+                              className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-all duration-150 ${
+                                selectedDropdownIndex === 0
+                                  ? 'bg-gray-100 border-l-4 border-l-blue-500'
+                                  : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+                              }`}
                             >
-                              {skill.name}
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-gray-900 truncate">
+                                    {skillSearchQuery.trim()}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Add as custom skill
+                                  </div>
+                                </div>
+                              </div>
                             </button>
-                          ))}
+                          </div>
+                        ) : (
+                          <div className="p-2">
+                            <div className="px-3 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Available Skills ({filteredSkills.length})
+                            </div>
+                            <div className="mt-1 space-y-0.5">
+                              {filteredSkills.map((skill, index) => (
+                                <button
+                                  key={skill.id}
+                                  type="button"
+                                  onClick={() => handleAddSkill(skill.id)}
+                                  onMouseEnter={() => setSelectedDropdownIndex(index)}
+                                  data-skill-index={index}
+                                  className={`w-full text-left px-4 py-2 text-sm rounded-lg transition-all duration-150 ${
+                                    selectedDropdownIndex === index
+                                      ? 'bg-blue-50 border-l-4 border-l-blue-500 shadow-sm'
+                                      : 'border-l-4 border-l-transparent hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-900 font-medium">
+                                      {highlightMatch(skill.name, skillSearchQuery)}
+                                    </span>
+                                    {selectedDropdownIndex === index && (
+                                      <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                            {skillSearchQuery.trim() && (
+                              <div className="mt-1 pt-1 border-t border-gray-100">
+                                <button
+                                  type="button"
+                                  onClick={handleAddCustomSkill}
+                                  data-skill-index={filteredSkills.length}
+                                  className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-all duration-150 ${
+                                    selectedDropdownIndex === filteredSkills.length
+                                      ? 'bg-gray-100 border-l-4 border-l-blue-500'
+                                      : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                      <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                                      </svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-gray-900 truncate">
+                                        {skillSearchQuery.trim()}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Add as custom skill
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {/* Keyboard shortcuts hint */}
+                      <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs font-mono">↑↓</kbd>
+                              Navigate
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs font-mono">Enter</kbd>
+                              Select
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs font-mono">Esc</kbd>
+                              Close
+                            </span>
+                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
 
@@ -844,22 +1106,45 @@ export default function EmployeeProfilePage() {
                   )}
                 </div>
 
-                <p className="text-xs text-gray-500 mt-2">
-                  Selected: {selectedSkillIds.length} skill(s)
-                </p>
+                <div className="flex items-start justify-between mt-3">
+                  <p className="text-xs text-gray-600">
+                    <span className="font-medium">
+                      Selected: {selectedSkillIds.length + customSkills.length} skill(s)
+                    </span>
+                    {customSkills.length > 0 && (
+                      <span className="text-green-600 ml-1">
+                        ({customSkills.length} custom)
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-500 italic">
+                    Use arrow keys to navigate, Enter to select
+                  </p>
+                </div>
               </div>
             ) : (
               <div>
-                {getSelectedSkills().length === 0 ? (
+                {(getSelectedSkills().length === 0 && customSkills.length === 0) ? (
                   <p className="text-gray-500 text-center py-4">No skills added yet</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {getSelectedSkills().map((skill) => (
                       <div
                         key={skill.id}
-                        className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full"
+                        className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 text-blue-800 px-4 py-2 rounded-full font-medium shadow-sm"
                       >
                         <span>{skill.name}</span>
+                      </div>
+                    ))}
+                    {customSkills.map((skillName) => (
+                      <div
+                        key={skillName}
+                        className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 text-green-800 px-4 py-2 rounded-full font-medium shadow-sm flex items-center gap-1.5"
+                      >
+                        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                        </svg>
+                        <span>{skillName}</span>
                       </div>
                     ))}
                   </div>

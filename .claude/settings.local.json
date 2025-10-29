@@ -19,7 +19,12 @@
       "Bash(cmd.exe /c \"del \\\\?\\C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\nul\")",
       "Bash(rm:*)",
       "Bash(curl:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(dir /s /b \"C:\\wamp64\\www\\jobprotal\\job-portal-frontend\\src\\app\")",
+      "Bash(findstr:*)",
+      "Bash(dir /s /b \"C:\\wamp64\\www\\jobprotal\\admin-panel\")",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
