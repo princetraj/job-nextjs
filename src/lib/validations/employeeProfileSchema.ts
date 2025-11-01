@@ -11,6 +11,7 @@ export const addressSchema = z.object({
 
 // Education validation schema
 export const educationSchema = z.object({
+  education_level_id: z.union([z.number(), z.string(), z.null()]).optional(),
   degree: z.string().min(1, 'Degree is required'),
   university: z.string().min(1, 'University is required'),
   field: z.string().min(1, 'Field of study is required'),

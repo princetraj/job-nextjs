@@ -39,6 +39,30 @@ export const publicService = {
     return response.data;
   },
 
+  // Get Degrees
+  async getDegrees(): Promise<{ degrees: Array<{ id: string; name: string }> }> {
+    const response = await api.get('/catalogs/degrees');
+    return response.data;
+  },
+
+  // Get Universities
+  async getUniversities(): Promise<{ universities: Array<{ id: string; name: string }> }> {
+    const response = await api.get('/catalogs/universities');
+    return response.data;
+  },
+
+  // Get Field of Studies
+  async getFieldOfStudies(): Promise<{ field_of_studies: Array<{ id: string; name: string }> }> {
+    const response = await api.get('/catalogs/field-of-studies');
+    return response.data;
+  },
+
+  // Get Education Levels
+  async getEducationLevels(): Promise<{ education_levels: Array<{ id: number; name: string; status: string; order: number }> }> {
+    const response = await api.get('/catalogs/education-levels', { params: { status: 'active' } });
+    return response.data;
+  },
+
   // Public Job Search
   async searchJobs(params?: {
     q?: string;

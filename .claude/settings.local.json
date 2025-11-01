@@ -24,7 +24,8 @@
       "Bash(findstr:*)",
       "Bash(dir /s /b \"C:\\wamp64\\www\\jobprotal\\admin-panel\")",
       "Bash(grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(php:*)"
     ],
     "deny": [],
     "ask": []

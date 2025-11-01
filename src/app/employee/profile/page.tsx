@@ -32,6 +32,15 @@ export default function EmployeeProfilePage() {
   const [selectedDropdownIndex, setSelectedDropdownIndex] = useState(-1);
   const skillInputRef = useRef<HTMLInputElement>(null);
 
+  // Education autocomplete state
+  const [availableDegrees, setAvailableDegrees] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableUniversities, setAvailableUniversities] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableFieldOfStudies, setAvailableFieldOfStudies] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableEducationLevels, setAvailableEducationLevels] = useState<Array<{ id: number; name: string; status: string; order: number }>>([]);
+  const [loadingEducationData, setLoadingEducationData] = useState(false);
+  const [activeAutocomplete, setActiveAutocomplete] = useState<{ index: number; field: string } | null>(null);
+  const educationDropdownRef = useRef<HTMLDivElement>(null);
+
   const {
     register,
     control,
@@ -128,6 +137,30 @@ export default function EmployeeProfilePage() {
     fetchSkills();
   }, []);
 
+  // Fetch education autocomplete data
+  useEffect(() => {
+    const fetchEducationData = async () => {
+      setLoadingEducationData(true);
+      try {
+        const [degreesRes, universitiesRes, fieldsRes, levelsRes] = await Promise.all([
+          publicService.getDegrees(),
+          publicService.getUniversities(),
+          publicService.getFieldOfStudies(),
+          publicService.getEducationLevels(),
+        ]);
+        setAvailableDegrees(degreesRes.degrees);
+        setAvailableUniversities(universitiesRes.universities);
+        setAvailableFieldOfStudies(fieldsRes.field_of_studies);
+        setAvailableEducationLevels(levelsRes.education_levels.sort((a, b) => a.order - b.order));
+      } catch (err) {
+        console.error('Failed to load education data:', err);
+      } finally {
+        setLoadingEducationData(false);
+      }
+    };
+    fetchEducationData();
+  }, []);
+
   // Update selected skill IDs and custom skills when profile or available skills change
   useEffect(() => {
     if (profile && profile.skills_details && availableSkills.length > 0) {
@@ -155,6 +188,9 @@ export default function EmployeeProfilePage() {
       if (skillDropdownRef.current && !skillDropdownRef.current.contains(event.target as Node)) {
         setShowSkillDropdown(false);
         setSelectedDropdownIndex(-1);
+      }
+      if (educationDropdownRef.current && !educationDropdownRef.current.contains(event.target as Node)) {
+        setActiveAutocomplete(null);
       }
     };
 
@@ -192,7 +228,14 @@ export default function EmployeeProfilePage() {
 
       // Education - only if array has items
       if (data.education_details && data.education_details.length > 0) {
-        updates.push({ field: 'education_details', value: data.education_details });
+        // Convert education_level_id to number (or null if empty string)
+        const educationData = data.education_details.map(edu => ({
+          ...edu,
+          education_level_id: edu.education_level_id && edu.education_level_id !== ''
+            ? Number(edu.education_level_id)
+            : null
+        }));
+        updates.push({ field: 'education_details', value: educationData });
       }
 
       // Experience - only if array has items
@@ -331,6 +374,52 @@ export default function EmployeeProfilePage() {
       skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) &&
       !selectedSkillIds.includes(skill.id)
   );
+
+  // Helper function to filter education autocomplete options
+  const getFilteredOptions = (options: Array<{ id: string; name: string }>, searchValue: string) => {
+    if (!searchValue) return options.slice(0, 10); // Show first 10 if no search
+    return options.filter(option =>
+      option.name.toLowerCase().includes(searchValue.toLowerCase())
+    ).slice(0, 10); // Limit to 10 results
+  };
+
+  // Helper to render autocomplete dropdown
+  const renderAutocompleteDropdown = (
+    options: Array<{ id: string; name: string }>,
+    currentValue: string,
+    onSelect: (value: string) => void,
+    fieldName: string
+  ) => {
+    const filtered = getFilteredOptions(options, currentValue);
+
+    return (
+      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-auto">
+        {filtered.length === 0 && currentValue ? (
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-2 text-green-600 font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>"{currentValue}" will be added as new {fieldName} (pending admin approval)</span>
+            </div>
+          </div>
+        ) : (
+          <div className="py-1">
+            {filtered.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSelect(option.name)}
+                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-gray-900 font-medium transition-colors"
+              >
+                {option.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Highlight matching text in skill names
   const highlightMatch = (text: string, query: string) => {
@@ -747,33 +836,135 @@ export default function EmployeeProfilePage() {
                       )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormInput
-                        label="Degree"
-                        name={`education_details.${index}.degree`}
-                        register={register}
-                        error={errors.education_details?.[index]?.degree}
-                        disabled={!isEditing}
-                        placeholder="e.g., Bachelor of Science"
-                        required
-                      />
-                      <FormInput
-                        label="University"
-                        name={`education_details.${index}.university`}
-                        register={register}
-                        error={errors.education_details?.[index]?.university}
-                        disabled={!isEditing}
-                        placeholder="e.g., Stanford University"
-                        required
-                      />
-                      <FormInput
-                        label="Field of Study"
-                        name={`education_details.${index}.field`}
-                        register={register}
-                        error={errors.education_details?.[index]?.field}
-                        disabled={!isEditing}
-                        placeholder="e.g., Computer Science"
-                        required
-                      />
+                      {/* Education Level Dropdown */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Education Level
+                        </label>
+                        <select
+                          {...register(`education_details.${index}.education_level_id` as const)}
+                          disabled={!isEditing}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setValue(`education_details.${index}.education_level_id`, value ? Number(value) : null);
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                          } border-gray-300`}
+                        >
+                          <option value="">Select Education Level</option>
+                          {availableEducationLevels.map((level) => (
+                            <option key={level.id} value={level.id}>
+                              {level.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Degree Autocomplete */}
+                      <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'degree' ? educationDropdownRef : null}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Degree <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register(`education_details.${index}.degree`)}
+                          type="text"
+                          disabled={!isEditing}
+                          placeholder="e.g., Bachelor of Science"
+                          onFocus={() => isEditing && setActiveAutocomplete({ index, field: 'degree' })}
+                          onChange={(e) => {
+                            setValue(`education_details.${index}.degree`, e.target.value);
+                            setActiveAutocomplete({ index, field: 'degree' });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                          } ${errors.education_details?.[index]?.degree ? 'border-red-500' : 'border-gray-300'}`}
+                        />
+                        {errors.education_details?.[index]?.degree && (
+                          <p className="text-red-500 text-xs mt-1">{errors.education_details[index]?.degree?.message}</p>
+                        )}
+                        {isEditing && activeAutocomplete?.index === index && activeAutocomplete?.field === 'degree' && watch(`education_details.${index}.degree`) && (
+                          renderAutocompleteDropdown(
+                            availableDegrees,
+                            watch(`education_details.${index}.degree`) || '',
+                            (value) => {
+                              setValue(`education_details.${index}.degree`, value);
+                              setActiveAutocomplete(null);
+                            },
+                            'degree'
+                          )
+                        )}
+                      </div>
+
+                      {/* University Autocomplete */}
+                      <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'university' ? educationDropdownRef : null}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          University <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register(`education_details.${index}.university`)}
+                          type="text"
+                          disabled={!isEditing}
+                          placeholder="e.g., Stanford University"
+                          onFocus={() => isEditing && setActiveAutocomplete({ index, field: 'university' })}
+                          onChange={(e) => {
+                            setValue(`education_details.${index}.university`, e.target.value);
+                            setActiveAutocomplete({ index, field: 'university' });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                          } ${errors.education_details?.[index]?.university ? 'border-red-500' : 'border-gray-300'}`}
+                        />
+                        {errors.education_details?.[index]?.university && (
+                          <p className="text-red-500 text-xs mt-1">{errors.education_details[index]?.university?.message}</p>
+                        )}
+                        {isEditing && activeAutocomplete?.index === index && activeAutocomplete?.field === 'university' && watch(`education_details.${index}.university`) && (
+                          renderAutocompleteDropdown(
+                            availableUniversities,
+                            watch(`education_details.${index}.university`) || '',
+                            (value) => {
+                              setValue(`education_details.${index}.university`, value);
+                              setActiveAutocomplete(null);
+                            },
+                            'university'
+                          )
+                        )}
+                      </div>
+
+                      {/* Field of Study Autocomplete */}
+                      <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'field' ? educationDropdownRef : null}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Field of Study <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register(`education_details.${index}.field`)}
+                          type="text"
+                          disabled={!isEditing}
+                          placeholder="e.g., Computer Science"
+                          onFocus={() => isEditing && setActiveAutocomplete({ index, field: 'field' })}
+                          onChange={(e) => {
+                            setValue(`education_details.${index}.field`, e.target.value);
+                            setActiveAutocomplete({ index, field: 'field' });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                          } ${errors.education_details?.[index]?.field ? 'border-red-500' : 'border-gray-300'}`}
+                        />
+                        {errors.education_details?.[index]?.field && (
+                          <p className="text-red-500 text-xs mt-1">{errors.education_details[index]?.field?.message}</p>
+                        )}
+                        {isEditing && activeAutocomplete?.index === index && activeAutocomplete?.field === 'field' && watch(`education_details.${index}.field`) && (
+                          renderAutocompleteDropdown(
+                            availableFieldOfStudies,
+                            watch(`education_details.${index}.field`) || '',
+                            (value) => {
+                              setValue(`education_details.${index}.field`, value);
+                              setActiveAutocomplete(null);
+                            },
+                            'field of study'
+                          )
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <FormInput
                           label="Start Year"
