@@ -20,9 +20,37 @@ export default function Home() {
   } | null>(null);
   const userType = getUserType();
 
+  // Hero slideshow state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = [
+    {
+      title: 'Find Your',
+      highlight: 'Dream Job',
+      description: 'Connect with top employers and discover opportunities that match your skills and ambitions'
+    },
+    {
+      title: 'Post Jobs',
+      highlight: 'Free',
+      description: 'Reach thousands of talented job seekers and find the perfect candidate for your team'
+    },
+    {
+      title: 'Build Your',
+      highlight: 'Career',
+      description: 'Access powerful tools and resources to advance your professional journey'
+    }
+  ];
+
   useEffect(() => {
     fetchLatestJobs();
   }, []);
+
+  // Auto-rotate slides every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   const fetchLatestJobs = async () => {
     setLoadingJobs(true);
@@ -137,13 +165,42 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                     🎯 Your Career Journey Starts Here
                   </span>
                 </div>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-                  Find Your
-                  <span className="block text-yellow-300">Dream Job</span>
-                </h1>
-                <p className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed">
-                  Connect with top employers and discover opportunities that match your skills and ambitions
-                </p>
+
+                {/* Slideshow */}
+                <div className="relative min-h-[280px] md:min-h-[320px]">
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      className={`absolute inset-0 transition-opacity duration-1000 ${
+                        index === currentSlide ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    >
+                      <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+                        {slide.title}
+                        <span className="block text-yellow-300">{slide.highlight}</span>
+                      </h1>
+                      <p className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed">
+                        {slide.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Slide Indicators */}
+                <div className="flex justify-center lg:justify-start gap-2 mb-8">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentSlide
+                          ? 'w-8 bg-yellow-300'
+                          : 'w-2 bg-white bg-opacity-50 hover:bg-opacity-75'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                   <Link
@@ -189,26 +246,32 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                   <div className="relative space-y-4">
                     <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-2xl p-6 border border-gray-200 transform rotate-3 hover:rotate-0 transition-transform shadow-2xl">
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-yellow-400 rounded-lg shadow-lg"></div>
+                        <div className="w-12 h-12 bg-yellow-400 rounded-lg shadow-lg flex items-center justify-center text-2xl">
+                          🎯
+                        </div>
                         <div className="flex-1">
-                          <div className="h-3 bg-gray-800 rounded w-32 mb-2"></div>
-                          <div className="h-2 bg-gray-500 rounded w-24"></div>
+                          <h3 className="text-lg font-bold text-gray-800 mb-1">Our Mission</h3>
+                          <p className="text-sm text-gray-600">Connecting Talent</p>
                         </div>
                       </div>
-                      <div className="h-2 bg-gray-300 rounded w-full mb-2"></div>
-                      <div className="h-2 bg-gray-300 rounded w-3/4"></div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        To bridge the gap between talented professionals and leading employers, creating opportunities for career growth and business success through innovative technology and personalized matching.
+                      </p>
                     </div>
 
                     <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-2xl p-6 border border-gray-200 transform -rotate-2 hover:rotate-0 transition-transform shadow-2xl">
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-green-400 rounded-lg shadow-lg"></div>
+                        <div className="w-12 h-12 bg-green-400 rounded-lg shadow-lg flex items-center justify-center text-2xl">
+                          👁️
+                        </div>
                         <div className="flex-1">
-                          <div className="h-3 bg-gray-800 rounded w-32 mb-2"></div>
-                          <div className="h-2 bg-gray-500 rounded w-24"></div>
+                          <h3 className="text-lg font-bold text-gray-800 mb-1">Our Vision</h3>
+                          <p className="text-sm text-gray-600">Future of Work</p>
                         </div>
                       </div>
-                      <div className="h-2 bg-gray-300 rounded w-full mb-2"></div>
-                      <div className="h-2 bg-gray-300 rounded w-3/4"></div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        To become the most trusted job portal platform, empowering millions of job seekers to achieve their career dreams while helping organizations build exceptional teams that drive innovation.
+                      </p>
                     </div>
                   </div>
                 </div>

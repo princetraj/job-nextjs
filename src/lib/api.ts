@@ -78,7 +78,29 @@ export const clearAuth = () => {
 export const handleApiError = (error: any) => {
   if (error.response) {
     // Server responded with error
-    return error.response.data.message || 'An error occurred';
+    const data = error.response.data;
+
+    // Try to extract error message in different formats
+    if (data.message) {
+      return data.message;
+    } else if (data.error) {
+      return data.error;
+    } else if (data.errors) {
+      // Handle validation errors (object or array)
+      if (typeof data.errors === 'object' && !Array.isArray(data.errors)) {
+        // Format: { email: ['Email already exists'], mobile: ['Mobile already exists'] }
+        const errorMessages = Object.values(data.errors).flat();
+        return errorMessages.join(', ');
+      } else if (Array.isArray(data.errors)) {
+        // Format: ['Error 1', 'Error 2']
+        return data.errors.join(', ');
+      }
+      return data.errors;
+    } else if (typeof data === 'string') {
+      return data;
+    }
+
+    return 'An error occurred';
   } else if (error.request) {
     // Request made but no response
     return 'Network error. Please check your connection.';

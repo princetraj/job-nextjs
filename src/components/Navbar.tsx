@@ -40,12 +40,21 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link
-              href="/jobs"
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Find Jobs
-            </Link>
+            {userType === 'employer' ? (
+              <Link
+                href="/employer/find-employees"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Find Employees
+              </Link>
+            ) : (
+              <Link
+                href="/jobs"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Find Jobs
+              </Link>
+            )}
 
             {!userType && (
               <>
@@ -147,12 +156,21 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
-            <Link
-              href="/jobs"
-              className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
-            >
-              Find Jobs
-            </Link>
+            {userType === 'employer' ? (
+              <Link
+                href="/employer/find-employees"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+              >
+                Find Employees
+              </Link>
+            ) : (
+              <Link
+                href="/jobs"
+                className="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
+              >
+                Find Jobs
+              </Link>
+            )}
 
             {!userType && (
               <>

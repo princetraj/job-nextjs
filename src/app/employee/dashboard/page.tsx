@@ -165,12 +165,35 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Welcome Section */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg shadow-md p-8 mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome back, {profile?.name || 'User'}!
-            </h1>
-            <p className="text-blue-100">
-              Here&apos;s an overview of your job search activities
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">
+                  Welcome back, {profile?.name || 'User'}!
+                </h1>
+                <p className="text-blue-100">
+                  Here&apos;s an overview of your job search activities
+                </p>
+              </div>
+              <Link
+                href="/employee/profile"
+                className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                Edit Profile
+              </Link>
+            </div>
           </div>
 
           {/* Notification */}

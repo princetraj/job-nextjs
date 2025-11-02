@@ -6,6 +6,7 @@ import { employeeService } from '@/services/employeeService';
 import { handleApiError } from '@/lib/api';
 import { Employee } from '@/types';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Navbar from '@/components/Navbar';
 
 export default function CVBuilderPage() {
   const router = useRouter();
@@ -54,14 +55,19 @@ export default function CVBuilderPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center min-h-screen">
+          <LoadingSpinner size="lg" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Back Button */}
         <button
@@ -277,6 +283,7 @@ export default function CVBuilderPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

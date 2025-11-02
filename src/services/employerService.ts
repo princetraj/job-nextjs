@@ -1,6 +1,6 @@
 // Employer Services
 import api from '@/lib/api';
-import { Employer, Job, Application } from '@/types';
+import { Employer, Job, Application, Employee, PaginatedResponse } from '@/types';
 
 interface EmployerPlan {
   id: string;
@@ -134,6 +134,21 @@ export const employerService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getPlanHistory(): Promise<{ history: any[] }> {
     const response = await api.get('/employer/plan/history');
+    return response.data;
+  },
+
+  // Search Employees with Filters
+  async searchEmployees(params?: {
+    q?: string;
+    education_level_id?: string;
+    degree_id?: string;
+    university_id?: string;
+    field_of_study_id?: string;
+    skill_ids?: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ employees: PaginatedResponse<Employee> }> {
+    const response = await api.get('/employer/employees/search', { params });
     return response.data;
   },
 };

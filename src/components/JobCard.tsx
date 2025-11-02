@@ -121,7 +121,7 @@ export default function JobCard({ job, showApplyButton = true, onApply, onShortl
       <p className="text-gray-700 mb-4 line-clamp-3">{job.description}</p>
 
       {job.salary && (
-        <p className="text-blue-600 font-semibold mb-4">{job.salary}</p>
+        <p className="text-blue-600 font-semibold mb-4">₹ {job.salary}</p>
       )}
 
       {job.status && (
