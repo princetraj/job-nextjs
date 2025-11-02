@@ -65,8 +65,15 @@ export default function FindEmployeesPage() {
     }
   };
 
-  const handleFilterChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
+  const handleFilterChange = (newFilters: {
+    q?: string;
+    education_level_id?: string;
+    degree_id?: string;
+    university_id?: string;
+    field_of_study_id?: string;
+    skill_ids?: string[];
+  }) => {
+    setFilters({ ...filters, ...newFilters });
   };
 
   const handleSearch = () => {

@@ -431,7 +431,7 @@ export default function EmployeeProfilePage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span>"{currentValue}" will be added as new {fieldName} (pending admin approval)</span>
+              <span>&ldquo;{currentValue}&rdquo; will be added as new {fieldName} (pending admin approval)</span>
             </div>
           </div>
         ) : (
