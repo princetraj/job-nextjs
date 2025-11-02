@@ -52,6 +52,7 @@ export const employeeProfileSchema = z.object({
   dob: z.string().optional(),
 
   // Editable fields
+  description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   address: addressSchema.optional(),
   education_details: z.array(educationSchema).optional(),
   experience_details: z.array(experienceSchema).optional(),

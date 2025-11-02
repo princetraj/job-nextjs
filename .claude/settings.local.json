@@ -25,7 +25,8 @@
       "Bash(dir /s /b \"C:\\wamp64\\www\\jobprotal\\admin-panel\")",
       "Bash(grep:*)",
       "Bash(npx tsc:*)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

@@ -36,6 +36,7 @@ export interface Experience {
 export interface Employee extends User {
   gender?: string;
   dob?: string;
+  description?: string;
   address?: Address;
   education_details?: Education[];
   experience_details?: Experience[];

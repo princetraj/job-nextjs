@@ -103,6 +103,7 @@ export default function EmployeeProfilePage() {
         mobile: data.user.mobile,
         gender: data.user.gender as 'M' | 'F' | 'O' | undefined,
         dob: data.user.dob,
+        description: data.user.description || '',
         address: data.user.address || {
           street: '',
           city: '',
@@ -245,6 +246,11 @@ export default function EmployeeProfilePage() {
       // Only send non-empty values (API requires value to be non-null)
       const updates = [];
 
+      // Description
+      if (data.description && data.description.trim()) {
+        updates.push({ field: 'description', value: data.description.trim() });
+      }
+
       // Address - only if at least one field is filled
       if (data.address && (data.address.street || data.address.city || data.address.state || data.address.zip || data.address.country)) {
         updates.push({ field: 'address', value: data.address });
@@ -320,6 +326,7 @@ export default function EmployeeProfilePage() {
         mobile: profile.mobile,
         gender: profile.gender as 'M' | 'F' | 'O' | undefined,
         dob: profile.dob,
+        description: profile.description || '',
         address: profile.address || {
           street: '',
           city: '',
@@ -768,6 +775,23 @@ export default function EmployeeProfilePage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* About Me / Description Section */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">About Me</h2>
+            <FormTextarea
+              label="Description"
+              name="description"
+              register={register}
+              error={errors.description}
+              disabled={!isEditing}
+              placeholder="Tell us about yourself, your career goals, achievements, and what makes you unique..."
+              rows={6}
+            />
+            {!isEditing && !profile?.description && (
+              <p className="text-gray-500 italic text-sm mt-2">No description added yet</p>
+            )}
           </div>
 
           {/* Address Section */}
