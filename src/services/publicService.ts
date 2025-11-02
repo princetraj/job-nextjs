@@ -63,6 +63,18 @@ export const publicService = {
     return response.data;
   },
 
+  // Get Companies
+  async getCompanies(): Promise<{ companies: Array<{ id: string; name: string }> }> {
+    const response = await api.get('/catalogs/companies');
+    return response.data;
+  },
+
+  // Get Job Titles
+  async getJobTitles(): Promise<{ job_titles: Array<{ id: string; name: string }> }> {
+    const response = await api.get('/catalogs/job-titles');
+    return response.data;
+  },
+
   // Public Job Search
   async searchJobs(params?: {
     q?: string;

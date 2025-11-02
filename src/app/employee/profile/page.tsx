@@ -37,9 +37,13 @@ export default function EmployeeProfilePage() {
   const [availableUniversities, setAvailableUniversities] = useState<Array<{ id: string; name: string }>>([]);
   const [availableFieldOfStudies, setAvailableFieldOfStudies] = useState<Array<{ id: string; name: string }>>([]);
   const [availableEducationLevels, setAvailableEducationLevels] = useState<Array<{ id: number; name: string; status: string; order: number }>>([]);
+  const [availableCompanies, setAvailableCompanies] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableJobTitles, setAvailableJobTitles] = useState<Array<{ id: string; name: string }>>([]);
   const [loadingEducationData, setLoadingEducationData] = useState(false);
+  const [loadingExperienceData, setLoadingExperienceData] = useState(false);
   const [activeAutocomplete, setActiveAutocomplete] = useState<{ index: number; field: string } | null>(null);
   const educationDropdownRef = useRef<HTMLDivElement>(null);
+  const experienceDropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -159,6 +163,26 @@ export default function EmployeeProfilePage() {
       }
     };
     fetchEducationData();
+  }, []);
+
+  // Fetch experience autocomplete data
+  useEffect(() => {
+    const fetchExperienceData = async () => {
+      setLoadingExperienceData(true);
+      try {
+        const [companiesRes, jobTitlesRes] = await Promise.all([
+          publicService.getCompanies(),
+          publicService.getJobTitles(),
+        ]);
+        setAvailableCompanies(companiesRes.companies);
+        setAvailableJobTitles(jobTitlesRes.job_titles);
+      } catch (err) {
+        console.error('Failed to load experience data:', err);
+      } finally {
+        setLoadingExperienceData(false);
+      }
+    };
+    fetchExperienceData();
   }, []);
 
   // Update selected skill IDs and custom skills when profile or available skills change
@@ -1035,24 +1059,75 @@ export default function EmployeeProfilePage() {
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormInput
-                          label="Company"
-                          name={`experience_details.${index}.company`}
-                          register={register}
-                          error={errors.experience_details?.[index]?.company}
-                          disabled={!isEditing}
-                          placeholder="e.g., Google Inc."
-                          required
-                        />
-                        <FormInput
-                          label="Job Title"
-                          name={`experience_details.${index}.title`}
-                          register={register}
-                          error={errors.experience_details?.[index]?.title}
-                          disabled={!isEditing}
-                          placeholder="e.g., Software Engineer"
-                          required
-                        />
+                        {/* Company Autocomplete */}
+                        <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'company' ? experienceDropdownRef : null}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Company <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            {...register(`experience_details.${index}.company`)}
+                            type="text"
+                            disabled={!isEditing}
+                            placeholder="e.g., Google Inc."
+                            onFocus={() => isEditing && setActiveAutocomplete({ index, field: 'company' })}
+                            onChange={(e) => {
+                              setValue(`experience_details.${index}.company`, e.target.value);
+                              setActiveAutocomplete({ index, field: 'company' });
+                            }}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                            } ${errors.experience_details?.[index]?.company ? 'border-red-500' : 'border-gray-300'}`}
+                          />
+                          {errors.experience_details?.[index]?.company && (
+                            <p className="text-red-500 text-xs mt-1">{errors.experience_details[index]?.company?.message}</p>
+                          )}
+                          {isEditing && activeAutocomplete?.index === index && activeAutocomplete?.field === 'company' && watch(`experience_details.${index}.company`) && (
+                            renderAutocompleteDropdown(
+                              availableCompanies,
+                              watch(`experience_details.${index}.company`) || '',
+                              (value) => {
+                                setValue(`experience_details.${index}.company`, value);
+                                setActiveAutocomplete(null);
+                              },
+                              'company'
+                            )
+                          )}
+                        </div>
+
+                        {/* Job Title Autocomplete */}
+                        <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'title' ? experienceDropdownRef : null}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Job Title <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            {...register(`experience_details.${index}.title`)}
+                            type="text"
+                            disabled={!isEditing}
+                            placeholder="e.g., Software Engineer"
+                            onFocus={() => isEditing && setActiveAutocomplete({ index, field: 'title' })}
+                            onChange={(e) => {
+                              setValue(`experience_details.${index}.title`, e.target.value);
+                              setActiveAutocomplete({ index, field: 'title' });
+                            }}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                            } ${errors.experience_details?.[index]?.title ? 'border-red-500' : 'border-gray-300'}`}
+                          />
+                          {errors.experience_details?.[index]?.title && (
+                            <p className="text-red-500 text-xs mt-1">{errors.experience_details[index]?.title?.message}</p>
+                          )}
+                          {isEditing && activeAutocomplete?.index === index && activeAutocomplete?.field === 'title' && watch(`experience_details.${index}.title`) && (
+                            renderAutocompleteDropdown(
+                              availableJobTitles,
+                              watch(`experience_details.${index}.title`) || '',
+                              (value) => {
+                                setValue(`experience_details.${index}.title`, value);
+                                setActiveAutocomplete(null);
+                              },
+                              'job title'
+                            )
+                          )}
+                        </div>
                       </div>
                       <FormTextarea
                         label="Description"
