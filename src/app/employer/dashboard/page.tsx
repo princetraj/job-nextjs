@@ -18,6 +18,7 @@ interface EmployerPlanDetails {
   is_active: boolean;
   is_expired: boolean;
   jobs_can_post: number;
+  jobs_remaining: number | null;
   contact_views_remaining: number | null;
   employee_contact_details_can_view: number;
   days_remaining: number | null;
@@ -35,6 +36,7 @@ export default function EmployerDashboard() {
   const [planDetails, setPlanDetails] = useState<EmployerPlanDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchDashboardData();
@@ -69,6 +71,18 @@ export default function EmployerDashboard() {
     } catch (err) {
       alert(handleApiError(err));
     }
+  };
+
+  const toggleJobDescription = (jobId: string) => {
+    setExpandedJobs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -137,49 +151,49 @@ export default function EmployerDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-600 font-medium mb-1">Price</p>
-                  <p className="text-2xl font-bold text-blue-900">₹{planDetails.price}</p>
-                </div>
-
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-purple-600 font-medium mb-1">Jobs Can Post</p>
-                  <p className="text-2xl font-bold text-purple-900">
-                    {planDetails.jobs_can_post === -1 ? 'Unlimited' : planDetails.jobs_can_post}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Plan Price</p>
+                  <p className="text-3xl font-bold text-blue-700">
+                    {planDetails.price === 0 ? 'Free' : `₹${planDetails.price}`}
                   </p>
                 </div>
 
-                <div className="bg-indigo-50 rounded-lg p-4">
-                  <p className="text-sm text-indigo-600 font-medium mb-1">Contact Views Remaining</p>
-                  <p className="text-2xl font-bold text-indigo-900">
-                    {planDetails.contact_views_remaining === -1
-                      ? 'Unlimited'
-                      : planDetails.contact_views_remaining ?? 0}
-                  </p>
-                  <p className="text-xs text-indigo-600 mt-1">
-                    Total: {planDetails.employee_contact_details_can_view === -1
-                      ? 'Unlimited'
-                      : planDetails.employee_contact_details_can_view ?? 0}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Jobs Remaining</p>
+                  <p className="text-3xl font-bold text-purple-700">
+                    {planDetails.jobs_remaining === -1 ? '∞' : planDetails.jobs_remaining}
+                    {planDetails.jobs_can_post !== -1 && (
+                      <span className="text-lg font-medium text-gray-600">
+                        /{planDetails.jobs_can_post}
+                      </span>
+                    )}
                   </p>
                 </div>
 
-                <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-sm text-green-600 font-medium mb-1">
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Contact Views</p>
+                  <p className="text-3xl font-bold text-indigo-700">
+                    {planDetails.contact_views_remaining === -1 ? '∞' : planDetails.contact_views_remaining}
+                    {planDetails.employee_contact_details_can_view !== -1 && (
+                      <span className="text-lg font-medium text-gray-600">
+                        /{planDetails.employee_contact_details_can_view}
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">
                     {planDetails.expires_at ? 'Days Remaining' : 'Validity'}
                   </p>
-                  <p className="text-2xl font-bold text-green-900">
+                  <p className="text-3xl font-bold text-green-700">
                     {planDetails.days_remaining !== null && planDetails.days_remaining >= 0
-                      ? `${Math.floor(planDetails.days_remaining)} days`
+                      ? Math.floor(planDetails.days_remaining)
                       : planDetails.expires_at
-                      ? 'Expired'
-                      : 'Lifetime'}
+                      ? '0'
+                      : '∞'}
                   </p>
-                  {planDetails.expires_at && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Expires: {new Date(planDetails.expires_at).toLocaleDateString()}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -299,84 +313,171 @@ export default function EmployerDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Post New Job */}
               <Link
                 href="/employer/jobs/create"
-                className="flex items-center justify-center bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-500"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Post New Job
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Post New Job</h3>
+                  <p className="text-sm text-gray-600">Create a new job posting</p>
+                </div>
               </Link>
+
+              {/* Manage Jobs */}
               <Link
                 href="/employer/jobs"
-                className="flex items-center justify-center bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-500"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                Manage Jobs
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Manage Jobs</h3>
+                  <p className="text-sm text-gray-600">Edit and manage postings</p>
+                </div>
               </Link>
+
+              {/* Company Profile */}
               <Link
                 href="/employer/profile"
-                className="flex items-center justify-center bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-500"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-                Company Profile
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Company Profile</h3>
+                  <p className="text-sm text-gray-600">Update company details</p>
+                </div>
               </Link>
+
+              {/* View Applications */}
               <Link
                 href="/employer/applications"
-                className="flex items-center justify-center bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-500"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-                View Applications
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">View Applications</h3>
+                  <p className="text-sm text-gray-600">Review candidate applications</p>
+                </div>
               </Link>
             </div>
           </div>
@@ -525,7 +626,33 @@ export default function EmployerDashboard() {
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-700 mb-4 line-clamp-2">{job.description}</p>
+                    <div className="mb-4">
+                      <p className={`text-gray-700 ${expandedJobs.has(job.id) ? '' : 'line-clamp-3'}`}>
+                        {job.description}
+                      </p>
+                      {job.description && job.description.length > 150 && (
+                        <button
+                          onClick={() => toggleJobDescription(job.id)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 flex items-center gap-1"
+                        >
+                          {expandedJobs.has(job.id) ? (
+                            <>
+                              Show Less
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            </>
+                          ) : (
+                            <>
+                              Show More
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
                         Category: {job.category?.name || 'Not specified'}

@@ -15,6 +15,7 @@ export default function JobCard({ job, showApplyButton = true, onApply, onShortl
   const [isViewingContact, setIsViewingContact] = useState(false);
   const [applied, setApplied] = useState(job.is_applied || false);
   const [shortlisted, setShortlisted] = useState(job.is_shortlisted || false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Update state when job prop changes (e.g., after page reload)
   useEffect(() => {
@@ -118,7 +119,33 @@ export default function JobCard({ job, showApplyButton = true, onApply, onShortl
         )}
       </div>
 
-      <p className="text-gray-700 mb-4 line-clamp-3">{job.description}</p>
+      <div className="mb-4">
+        <p className={`text-gray-700 ${isExpanded ? '' : 'line-clamp-3'}`}>
+          {job.description}
+        </p>
+        {job.description && job.description.length > 150 && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 flex items-center gap-1"
+          >
+            {isExpanded ? (
+              <>
+                Show Less
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              </>
+            ) : (
+              <>
+                Show More
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </>
+            )}
+          </button>
+        )}
+      </div>
 
       {job.salary && (
         <p className="text-blue-600 font-semibold mb-4">₹ {job.salary}</p>

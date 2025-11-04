@@ -40,6 +40,11 @@ export default function EmployeeDashboard() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [showCVRequestModal, setShowCVRequestModal] = useState(false);
+  const [cvRequestLoading, setCVRequestLoading] = useState(false);
+  const [cvRequestNotes, setCVRequestNotes] = useState('');
+  const [cvPrice] = useState(50); // Professional CV price
+  const [hasPendingCVRequest, setHasPendingCVRequest] = useState(false);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -52,12 +57,13 @@ export default function EmployeeDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profileData, appliedData, shortlistedData, contactViewedData, planData] = await Promise.all([
+      const [profileData, appliedData, shortlistedData, contactViewedData, planData, cvRequestsData] = await Promise.all([
         employeeService.getProfile(),
         employeeService.getAppliedJobs(),
         employeeService.getShortlistedJobs(),
         employeeService.getContactViewedJobs(),
         employeeService.getCurrentPlan(),
+        employeeService.getCVRequests(),
       ]);
 
       setProfile(profileData.user);
@@ -65,6 +71,12 @@ export default function EmployeeDashboard() {
       setShortlistedJobs(shortlistedData.jobs);
       setContactViewedJobs(contactViewedData.jobs);
       setCurrentPlan(planData.plan);
+
+      // Check if there's a pending or in_progress CV request
+      const pendingRequest = cvRequestsData.requests?.find(
+        (req: { status: string }) => req.status === 'pending' || req.status === 'in_progress'
+      );
+      setHasPendingCVRequest(!!pendingRequest);
     } catch (err) {
       setError(handleApiError(err));
     } finally {
@@ -133,6 +145,36 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
       } else {
         showNotification('error', 'Failed to view contact details');
       }
+    }
+  };
+
+  const handleCVRequest = async () => {
+    if (!cvRequestNotes.trim()) {
+      showNotification('error', 'Please provide some notes about your CV requirements');
+      return;
+    }
+
+    setCVRequestLoading(true);
+    try {
+      await employeeService.requestProfessionalCV({
+        notes: cvRequestNotes,
+        price: cvPrice,
+      });
+      showNotification('success', 'Professional CV request submitted successfully! You will be notified once it is processed.');
+      setShowCVRequestModal(false);
+      setCVRequestNotes('');
+      setHasPendingCVRequest(true); // Update state immediately
+      fetchDashboardData(); // Refresh data to get the latest CV request status
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message = axiosError.response?.data?.message || 'Failed to submit CV request';
+        showNotification('error', message);
+      } else {
+        showNotification('error', 'Failed to submit CV request');
+      }
+    } finally {
+      setCVRequestLoading(false);
     }
   };
 
@@ -244,23 +286,42 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
 
           {/* Current Plan Card */}
           {currentPlan && (
-            <div className="bg-white border-2 border-purple-200 rounded-lg shadow-lg p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-blue-500">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{currentPlan.name}</h2>
-                  <p className="text-gray-600 text-sm">{currentPlan.description}</p>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-1">{currentPlan.name}</h2>
+                  <p className="text-gray-600">{currentPlan.description}</p>
                 </div>
-                {currentPlan.is_default && (
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                    Default Plan
+                <div className="text-right flex flex-col gap-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    currentPlan.is_expired
+                      ? 'bg-red-100 text-red-800'
+                      : currentPlan.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {currentPlan.is_expired ? 'Expired' : currentPlan.is_active ? 'Active' : 'Inactive'}
                   </span>
-                )}
+                  <Link
+                    href="/employee/upgrade-plan"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Upgrade Plan
+                  </Link>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-                  <p className="text-gray-700 text-xs font-semibold mb-2">Job Applications</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Plan Price</p>
                   <p className="text-3xl font-bold text-blue-700">
+                    {currentPlan.price === 0 ? 'Free' : `₹${currentPlan.price}`}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Job Applications</p>
+                  <p className="text-3xl font-bold text-purple-700">
                     {currentPlan.jobs_remaining === -1 ? '∞' : currentPlan.jobs_remaining}
                     {currentPlan.jobs_can_apply !== -1 && (
                       <span className="text-lg font-medium text-gray-600">
@@ -270,9 +331,9 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
-                  <p className="text-gray-700 text-xs font-semibold mb-2">Contact Views</p>
-                  <p className="text-3xl font-bold text-green-700">
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">Contact Views</p>
+                  <p className="text-3xl font-bold text-indigo-700">
                     {currentPlan.contact_views_remaining === -1 ? '∞' : currentPlan.contact_views_remaining}
                     {currentPlan.contact_details_can_view !== -1 && (
                       <span className="text-lg font-medium text-gray-600">
@@ -282,34 +343,44 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
-                  <p className="text-gray-700 text-xs font-semibold mb-2">Plan Price</p>
-                  <p className="text-3xl font-bold text-purple-700">
-                    {currentPlan.price === 0 ? 'Free' : `₹${currentPlan.price}`}
+                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                  <p className="text-gray-700 text-xs font-semibold mb-2 uppercase tracking-wide">
+                    {currentPlan.expires_at ? 'Days Remaining' : 'Validity'}
                   </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
-                  <p className="text-gray-700 text-xs font-semibold mb-2">Days Remaining</p>
-                  <p className="text-3xl font-bold text-orange-700">
+                  <p className="text-3xl font-bold text-green-700">
                     {currentPlan.expires_at === null ? '∞' : currentPlan.days_remaining || 0}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Link
-                  href="/employee/upgrade-plan"
-                  className="flex-1 bg-purple-600 text-white text-center py-3 px-4 rounded-md hover:bg-purple-700 transition-colors font-medium shadow-sm"
-                >
-                  Upgrade Plan
-                </Link>
-                {currentPlan.is_expired && (
-                  <span className="flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-md text-sm font-medium">
-                    Plan Expired
-                  </span>
-                )}
-              </div>
+              {currentPlan.is_default && (
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-yellow-800 flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      You are currently on the default plan. Upgrade to unlock more features!
+                    </p>
+                    <Link
+                      href="/employee/upgrade-plan"
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors ml-4"
+                    >
+                      Upgrade Now
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -397,7 +468,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
           {/* Quick Actions */}
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {/* Search Jobs */}
               <Link
                 href="/jobs"
@@ -520,6 +591,74 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                   <p className="text-sm text-gray-600">Upload and edit your CV</p>
                 </div>
               </Link>
+
+              {/* Professional CV Request */}
+              <button
+                onClick={() => !hasPendingCVRequest && setShowCVRequestModal(true)}
+                disabled={hasPendingCVRequest}
+                className={`group bg-white rounded-xl shadow-md transition-all duration-300 overflow-hidden border text-left ${
+                  hasPendingCVRequest
+                    ? 'border-gray-200 cursor-not-allowed opacity-75'
+                    : 'border-gray-100 hover:border-amber-500 hover:shadow-xl'
+                }`}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`rounded-lg p-3 transition-transform duration-300 ${
+                      hasPendingCVRequest
+                        ? 'bg-gradient-to-br from-gray-400 to-gray-500'
+                        : 'bg-gradient-to-br from-amber-500 to-amber-600 group-hover:scale-110'
+                    }`}>
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        {hasPendingCVRequest ? (
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        ) : (
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                          />
+                        )}
+                      </svg>
+                    </div>
+                    {!hasPendingCVRequest && (
+                      <svg
+                        className="w-5 h-5 text-gray-400 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Professional CV</h3>
+                  <p className="text-sm text-gray-600">
+                    {hasPendingCVRequest ? 'Request in progress' : 'Get expert CV creation'}
+                  </p>
+                  <p className={`text-xs mt-2 font-medium ${
+                    hasPendingCVRequest ? 'text-gray-500' : 'text-amber-600'
+                  }`}>
+                    {hasPendingCVRequest ? 'Already Requested' : 'Paid Service'}
+                  </p>
+                </div>
+              </button>
 
               {/* My Applications */}
               <Link
@@ -713,6 +852,87 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
           </div>
         </div>
       </main>
+
+      {/* Professional CV Request Modal */}
+      {showCVRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Request Professional CV</h3>
+              <button
+                onClick={() => {
+                  setShowCVRequestModal(false);
+                  setCVRequestNotes('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-amber-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800">Professional Service</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Our experts will create a professional CV for you based on your profile and requirements. This is a paid service.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Requirements & Notes <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={cvRequestNotes}
+                onChange={(e) => setCVRequestNotes(e.target.value)}
+                placeholder="Tell us about your preferences, target job roles, any specific requirements..."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                disabled={cvRequestLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Estimated delivery: 3-5 business days
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCVRequestModal(false);
+                  setCVRequestNotes('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={cvRequestLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCVRequest}
+                disabled={cvRequestLoading || !cvRequestNotes.trim()}
+                className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {cvRequestLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span className="ml-2">Submitting...</span>
+                  </>
+                ) : (
+                  'Submit Request'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

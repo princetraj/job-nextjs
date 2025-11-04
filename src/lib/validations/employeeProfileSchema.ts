@@ -33,6 +33,8 @@ export const experienceSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   year_start: z.string().min(4, 'Start year is required'),
   year_end: z.string().min(4, 'End year is required'),
+  month_start: z.string().optional(),
+  month_end: z.string().optional(),
 }).refine((data) => {
   const start = parseInt(data.year_start);
   const end = parseInt(data.year_end);

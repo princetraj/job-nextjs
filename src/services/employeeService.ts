@@ -113,6 +113,7 @@ export const employeeService = {
   async requestProfessionalCV(data: {
     notes?: string;
     preferred_template?: string;
+    price: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }): Promise<any> {
     const response = await api.post('/employee/cv/request-professional', data);

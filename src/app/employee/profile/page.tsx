@@ -947,7 +947,7 @@ export default function EmployeeProfilePage() {
                       {/* University Autocomplete */}
                       <div className="relative" ref={activeAutocomplete?.index === index && activeAutocomplete?.field === 'university' ? educationDropdownRef : null}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          University <span className="text-red-500">*</span>
+                          University/College/School <span className="text-red-500">*</span>
                         </label>
                         <input
                           {...register(`education_details.${index}.university`)}
@@ -1054,6 +1054,8 @@ export default function EmployeeProfilePage() {
                       description: '',
                       year_start: '',
                       year_end: '',
+                      month_start: '',
+                      month_end: '',
                     })
                   }
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
@@ -1163,25 +1165,87 @@ export default function EmployeeProfilePage() {
                         required
                         rows={3}
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormInput
-                          label="Start Year"
-                          name={`experience_details.${index}.year_start`}
-                          register={register}
-                          error={errors.experience_details?.[index]?.year_start}
-                          disabled={!isEditing}
-                          placeholder="2020"
-                          required
-                        />
-                        <FormInput
-                          label="End Year"
-                          name={`experience_details.${index}.year_end`}
-                          register={register}
-                          error={errors.experience_details?.[index]?.year_end}
-                          disabled={!isEditing}
-                          placeholder="2024"
-                          required
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Start Date <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              {...register(`experience_details.${index}.month_start`)}
+                              disabled={!isEditing}
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                              } border-gray-300`}
+                            >
+                              <option value="">Month</option>
+                              <option value="1">January</option>
+                              <option value="2">February</option>
+                              <option value="3">March</option>
+                              <option value="4">April</option>
+                              <option value="5">May</option>
+                              <option value="6">June</option>
+                              <option value="7">July</option>
+                              <option value="8">August</option>
+                              <option value="9">September</option>
+                              <option value="10">October</option>
+                              <option value="11">November</option>
+                              <option value="12">December</option>
+                            </select>
+                            <input
+                              {...register(`experience_details.${index}.year_start`)}
+                              type="text"
+                              disabled={!isEditing}
+                              placeholder="Year"
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                              } ${errors.experience_details?.[index]?.year_start ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                          </div>
+                          {errors.experience_details?.[index]?.year_start && (
+                            <p className="text-red-500 text-xs mt-1">{errors.experience_details[index]?.year_start?.message}</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            End Date <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              {...register(`experience_details.${index}.month_end`)}
+                              disabled={!isEditing}
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                              } border-gray-300`}
+                            >
+                              <option value="">Month</option>
+                              <option value="1">January</option>
+                              <option value="2">February</option>
+                              <option value="3">March</option>
+                              <option value="4">April</option>
+                              <option value="5">May</option>
+                              <option value="6">June</option>
+                              <option value="7">July</option>
+                              <option value="8">August</option>
+                              <option value="9">September</option>
+                              <option value="10">October</option>
+                              <option value="11">November</option>
+                              <option value="12">December</option>
+                            </select>
+                            <input
+                              {...register(`experience_details.${index}.year_end`)}
+                              type="text"
+                              disabled={!isEditing}
+                              placeholder="Year"
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                              } ${errors.experience_details?.[index]?.year_end ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                          </div>
+                          {errors.experience_details?.[index]?.year_end && (
+                            <p className="text-red-500 text-xs mt-1">{errors.experience_details[index]?.year_end?.message}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

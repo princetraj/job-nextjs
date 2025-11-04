@@ -21,6 +21,7 @@ export default function EmployerJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   const fetchJobs = async () => {
     try {
@@ -63,6 +64,18 @@ export default function EmployerJobsPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const toggleJobDescription = (jobId: string) => {
+    setExpandedJobs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
     });
   };
 
@@ -244,7 +257,33 @@ export default function EmployerJobsPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 line-clamp-2">{job.description}</p>
+                          <div>
+                            <p className={`text-sm text-gray-500 ${expandedJobs.has(job.id) ? '' : 'line-clamp-3'}`}>
+                              {job.description}
+                            </p>
+                            {job.description && job.description.length > 150 && (
+                              <button
+                                onClick={() => toggleJobDescription(job.id)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 flex items-center gap-1"
+                              >
+                                {expandedJobs.has(job.id) ? (
+                                  <>
+                                    Show Less
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  </>
+                                ) : (
+                                  <>
+                                    Show More
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
