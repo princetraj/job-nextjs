@@ -82,6 +82,7 @@ export default function UpgradePlanPage() {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [finalAmount, setFinalAmount] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   useEffect(() => {
     fetchAvailablePlans();
@@ -122,8 +123,8 @@ export default function UpgradePlanPage() {
   };
 
   const handleProceedToPayment = async () => {
-    if (!window.Razorpay) {
-      alert('Payment gateway is loading. Please try again in a moment.');
+    if (!razorpayLoaded || !window.Razorpay) {
+      alert('Payment gateway is still loading. Please wait a moment and try again.');
       return;
     }
 
@@ -239,7 +240,15 @@ export default function UpgradePlanPage() {
       {/* Load Razorpay script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('Razorpay script loaded successfully');
+          setRazorpayLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('Failed to load Razorpay script', e);
+          setError('Failed to load payment gateway. Please refresh the page.');
+        }}
       />
 
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -435,14 +444,18 @@ export default function UpgradePlanPage() {
                 {/* Proceed Button */}
                 <button
                   onClick={handleProceedToPayment}
-                  disabled={!!upgrading}
+                  disabled={!!upgrading || !razorpayLoaded}
                   className={`w-full py-4 px-6 rounded-lg font-semibold text-white text-lg transition-colors ${
-                    upgrading
+                    upgrading || !razorpayLoaded
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
-                  {upgrading ? 'Processing...' : `Proceed to Payment - ₹${finalAmount.toFixed(2)}`}
+                  {!razorpayLoaded
+                    ? 'Loading payment gateway...'
+                    : upgrading
+                    ? 'Processing...'
+                    : `Proceed to Payment - ₹${finalAmount.toFixed(2)}`}
                 </button>
 
                 <p className="text-xs text-gray-500 text-center mt-4">
