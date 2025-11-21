@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getUserType, clearAuth } from '@/lib/api';
 import { authService } from '@/services/authService';
@@ -92,11 +93,18 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-24">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-blue-600">
-              JobPortal
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt="WayUp360 Jobs"
+                width={250}
+                height={90}
+                priority
+                className="h-20 w-auto"
+              />
             </Link>
           </div>
 

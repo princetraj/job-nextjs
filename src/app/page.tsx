@@ -147,7 +147,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
 
       <main className="flex-1">
         {/* Hero Section - Enhanced */}
-        <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white overflow-hidden">
+        <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
@@ -239,8 +239,8 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                 <div className="relative">
                   {/* Decorative Elements */}
                   <div className="absolute top-0 right-0 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                  <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-                  <div className="absolute bottom-0 left-20 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+                  <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                  <div className="absolute bottom-0 left-20 w-72 h-72 bg-secondary-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
 
                   {/* Card Stack */}
                   <div className="relative space-y-4">
@@ -400,7 +400,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-2">
+              <div className="group bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-2">
                 <div className="bg-blue-600 text-white w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -412,8 +412,8 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                 </p>
               </div>
 
-              <div className="group bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-2">
-                <div className="bg-purple-600 text-white w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="group bg-gradient-to-br from-secondary-50 to-secondary-100 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-2">
+                <div className="bg-secondary-600 text-white w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -449,7 +449,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
               {/* Connecting Line */}
-              <div className="hidden md:block absolute top-20 left-0 right-0 h-1 bg-gradient-to-r from-blue-200 via-purple-200 to-green-200"></div>
+              <div className="hidden md:block absolute top-20 left-0 right-0 h-1 bg-gradient-to-r from-blue-200 via-secondary-200 to-green-200"></div>
 
               <div className="relative text-center">
                 <div className="bg-white w-40 h-40 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg relative z-10">
@@ -468,7 +468,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
                 <div className="bg-white w-40 h-40 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg relative z-10">
                   <div className="text-6xl">🔍</div>
                 </div>
-                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-purple-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl z-20">
+                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-secondary-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl z-20">
                   2
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">Search & Apply</h3>
@@ -545,7 +545,7 @@ ${contact.address ? `Address: ${Object.values(contact.address).filter(Boolean).j
         </div>
 
         {/* CTA Section - Enhanced */}
-        <div className="relative py-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white overflow-hidden">
+        <div className="relative py-20 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white overflow-hidden">
           <div className="absolute inset-0 opacity-20">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
